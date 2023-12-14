@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from twilio.rest import Client
+import json
+from flask import session
 
 load_dotenv()
 
@@ -199,7 +201,19 @@ tools = [
                 "required": ["date", "time"],
             },
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "end_conversation",
+            "description": "End the conversation when customer is satisfied with the service",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
 ]
 
 start_chat_log = [
@@ -207,7 +221,10 @@ start_chat_log = [
 ]
 
 
-def askgpt(question, chat_log=None) -> tuple[str, list]:
+def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
+    print("QUESTION --------------------------------------------------------------")
+    print(question)
+    # If there is no chat log, start with the context
     if chat_log is None:
         chat_log = start_chat_log
 
@@ -216,16 +233,66 @@ def askgpt(question, chat_log=None) -> tuple[str, list]:
     response = openAI_client.chat.completions.create(
         model="gpt-3.5-turbo", messages=chat_log, tools=tools, tool_choice="auto"
     )
+    print("RESPONSE  --------------------------------------------------------------")
+    print(response)
 
-    answer = response.choices[0].message.content
-    chat_log = chat_log + [{"role": "assistant", "content": answer}]
-    return answer, chat_log
+    response_message = response.choices[0].message
+    tool_calls = response_message.tool_calls
+
+    # Check if the model wanted to call a function
+    if tool_calls:
+
+        available_functions = {
+            "book_appointment": book_appointment,
+        }
+
+        # extend conversation with mnodel's reply
+        chat_log.append(response_message)
+
+        # send the info for each function call and function response to the model
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_args = json.loads(tool_call.function.arguments)
+            print("FUNCTION_ARGS: --------------------------------------------------------------")
+            print(function_args)
+
+            function_response = function_to_call(
+                date=function_args.get("date"),
+                time=function_args.get("time"),
+            )
+            print("FUNCTION_RESPONSE: --------------------------------------------------------------")
+            print(function_response)
+
+            # extend conversation with function response
+            chat_log.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+
+        # get a new response from the model where it can see the function response
+        second_response = openAI_client.chat.completions.create(
+            model="gpt-3.5-turbo", messages=chat_log
+        )
+        print("SECOND_RESPONSE --------------------------------------------------------------")
+        print(second_response)
+
+        answer = second_response.choices[0].message.content
+        chat_log = chat_log + [{"role": "assistant", "content": answer}]
+        return answer, chat_log
+    else:
+        answer = response.choices[0].message.content
+        chat_log = chat_log + [{"role": "assistant", "content": answer}]
+        return answer, chat_log
 
 
-async def send_message(content, sender_number, twilio_number) -> None:
+async def send_message(content: str, sender_number: str, twilio_number: str) -> None:
     message = twilio_client.messages.create(
         body=content,
-        #  from_="+15005550006", # Test number
         from_=twilio_number,
         to=sender_number,
     )
@@ -234,3 +301,12 @@ async def send_message(content, sender_number, twilio_number) -> None:
 
 def book_appointment(date: str, time: str) -> None:
     print("Booking Appointment...")
+    return json.dumps({"date booked": date, "time booked": time})
+
+
+def end_conversation():
+    session.clear()
+    return json.dumps({"end conversation": True})
+
+def create_estime():
+    pass

@@ -4,6 +4,8 @@ from twilio.twiml.voice_response import VoiceResponse
 from chatbot import askgpt, send_message
 import os
 from dotenv import load_dotenv
+from datetime import timedelta
+import pprint
 
 load_dotenv()
 
@@ -12,10 +14,14 @@ load_dotenv()
 # generate signatures.
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-
+app.config["SESSION_TYPE"] = "filesystem"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 
 @app.route("/bot", methods=["POST"])
 async def bot():
+    print("SESSION ---------------------------------------------------")
+    pp = pprint.PrettyPrinter()
+    pp.pprint(session)
     incoming_msg = request.values["Body"]
     sender_number = request.values["From"]
     twilio_number = request.values["To"]
@@ -34,7 +40,7 @@ async def async_helper(question, sender_number, twilio_number):
 @app.route("/backup", methods=["GET"])
 def backup():
     response = MessagingResponse()
-    response.message("Sorry, our AI took too long to respond 😢")
+    response.message("Sorry, there was an error on our end 😢")
     return str(response)
 
 
@@ -51,7 +57,3 @@ async def greeting():
     response.hangup()
     return str(response)
 
-
-# python3 -m venv venv
-# source venv/bin/activate
-# pip install openai twilio flask python-dotenv pyngrok

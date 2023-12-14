@@ -1,3 +1,4 @@
 .env
-venv
-__pychache__
+venv/
+__pychache__/
+flask_session/
