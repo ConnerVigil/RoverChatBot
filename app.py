@@ -17,6 +17,12 @@ app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=1)
 
+
+@app.route("/")
+def hello_world():
+    return "Hello World!\n"
+
+
 @app.route("/bot", methods=["POST"])
 async def bot():
     print("SESSION ---------------------------------------------------")
@@ -57,3 +63,6 @@ async def greeting():
     response.hangup()
     return str(response)
 
+
+if __name__ == "__main__":
+    app.run(debug=True)

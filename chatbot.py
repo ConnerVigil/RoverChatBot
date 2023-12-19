@@ -241,7 +241,6 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
 
     # Check if the model wanted to call a function
     if tool_calls:
-
         available_functions = {
             "book_appointment": book_appointment,
         }
@@ -254,14 +253,18 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
             function_name = tool_call.function.name
             function_to_call = available_functions[function_name]
             function_args = json.loads(tool_call.function.arguments)
-            print("FUNCTION_ARGS: --------------------------------------------------------------")
+            print(
+                "FUNCTION_ARGS: --------------------------------------------------------------"
+            )
             print(function_args)
 
             function_response = function_to_call(
                 date=function_args.get("date"),
                 time=function_args.get("time"),
             )
-            print("FUNCTION_RESPONSE: --------------------------------------------------------------")
+            print(
+                "FUNCTION_RESPONSE: --------------------------------------------------------------"
+            )
             print(function_response)
 
             # extend conversation with function response
@@ -278,7 +281,9 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
         second_response = openAI_client.chat.completions.create(
             model="gpt-3.5-turbo", messages=chat_log
         )
-        print("SECOND_RESPONSE --------------------------------------------------------------")
+        print(
+            "SECOND_RESPONSE --------------------------------------------------------------"
+        )
         print(second_response)
 
         answer = second_response.choices[0].message.content
@@ -307,6 +312,7 @@ def book_appointment(date: str, time: str) -> None:
 def end_conversation():
     session.clear()
     return json.dumps({"end conversation": True})
+
 
 def create_estime():
     pass
