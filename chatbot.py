@@ -4,6 +4,7 @@ from openai import OpenAI
 from twilio.rest import Client
 import json
 from flask import session
+from termcolor import colored
 
 load_dotenv()
 
@@ -18,7 +19,8 @@ You are a helpful assistant for Banner Pest Services. Customers will ask you que
 about the below information and you will need to answer. If a customer asks you to book, make up a 
 fake appointment timeslot for experimental purposes. Your responses need to be friendly, concise, 
 and conversational. You are the customer’s best friend. Use questions at the end of each message to 
-drive customers to book.
+drive customers to book. Don't make assumptions about what values to plug into functions. Ask for 
+clarification if a user request is ambiguous.
 
 Serving the San Francisco Bay and East Bay Area, Banner Pest Services provides residential
 and commercial pest control services. As the leading provider of eco-friendly services in
@@ -178,6 +180,13 @@ Healthcare Facilities
 Dealerships
 Storage Facilities
 And More!
+
+When you call the book_appointment function, please format the paramaters like this:
+{
+    "date": "2021-09-29",
+    "time": "12:00"
+}
+The "date" parameter has to be in that format.
 """
 
 tools = [
@@ -221,9 +230,28 @@ start_chat_log = [
 ]
 
 
+def pretty_print_conversation(messages):
+    role_to_color = {
+        "system": "red",
+        "user": "green",
+        "assistant": "blue",
+        "tool": "magenta",
+    }
+    
+    for message in messages:
+        if message["role"] == "system":
+            print(colored(f"system: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "user":
+            print(colored(f"user: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "assistant" and message.get("function_call"):
+            print(colored(f"assistant: {message['function_call']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "assistant" and not message.get("function_call"):
+            print(colored(f"assistant: {message['content']}\n", role_to_color[message["role"]]))
+        elif message["role"] == "tool":
+            print(colored(f"function ({message['name']}): {message['content']}\n", role_to_color[message["role"]]))
+
+
 def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
-    print("QUESTION --------------------------------------------------------------")
-    print(question)
     # If there is no chat log, start with the context
     if chat_log is None:
         chat_log = start_chat_log
@@ -231,10 +259,13 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
     chat_log = chat_log + [{"role": "user", "content": question}]
 
     response = openAI_client.chat.completions.create(
-        model="gpt-3.5-turbo", messages=chat_log, tools=tools, tool_choice="auto"
+        model="gpt-3.5-turbo", 
+        messages=chat_log, 
+        tools=tools, 
+        tool_choice="auto"
     )
-    print("RESPONSE  --------------------------------------------------------------")
-    print(response)
+
+    print(chat_log)
 
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
@@ -245,7 +276,7 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
             "book_appointment": book_appointment,
         }
 
-        # extend conversation with mnodel's reply
+        # extend conversation with model's reply
         chat_log.append(response_message)
 
         # send the info for each function call and function response to the model
@@ -253,19 +284,11 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
             function_name = tool_call.function.name
             function_to_call = available_functions[function_name]
             function_args = json.loads(tool_call.function.arguments)
-            print(
-                "FUNCTION_ARGS: --------------------------------------------------------------"
-            )
-            print(function_args)
 
             function_response = function_to_call(
                 date=function_args.get("date"),
                 time=function_args.get("time"),
             )
-            print(
-                "FUNCTION_RESPONSE: --------------------------------------------------------------"
-            )
-            print(function_response)
 
             # extend conversation with function response
             chat_log.append(
@@ -281,18 +304,14 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
         second_response = openAI_client.chat.completions.create(
             model="gpt-3.5-turbo", messages=chat_log
         )
-        print(
-            "SECOND_RESPONSE --------------------------------------------------------------"
-        )
-        print(second_response)
 
         answer = second_response.choices[0].message.content
-        chat_log = chat_log + [{"role": "assistant", "content": answer}]
-        return answer, chat_log
     else:
         answer = response.choices[0].message.content
-        chat_log = chat_log + [{"role": "assistant", "content": answer}]
-        return answer, chat_log
+    
+    chat_log = chat_log + [{"role": "assistant", "content": answer}]
+    # pretty_print_conversation(chat_log)
+    return answer, chat_log
 
 
 async def send_message(content: str, sender_number: str, twilio_number: str) -> None:

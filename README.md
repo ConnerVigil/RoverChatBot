@@ -5,7 +5,7 @@
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install openai twilio flask[async] python-dotenv pyngrok
+pip install openai twilio 'flask[async]' python-dotenv pyngrok black
 ```
 
 ## How to start server
@@ -18,12 +18,6 @@ flask run --port 8000 --debug
 
 ```
 ngrok http 8000
-```
-
-## Dependencies
-
-```
-pip install openai twilio flask[async] python-dotenv pyngrok gunicorn
 ```
 
 ## Linux Services
@@ -51,3 +45,5 @@ sudo systemctl disable example.service
 ```
 sudo systemctl restart nginx
 ```
+
+## GUNICORN
