@@ -5,6 +5,7 @@ from twilio.rest import Client
 import json
 from flask import session
 from termcolor import colored
+from datetime import datetime
 
 load_dotenv()
 
@@ -223,6 +224,18 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_current_date_and_time",
+            "description": "Get the current date and time",
+            "parameters": {
+                "type": "object",
+                "properties": {},
+                "required": [],
+            },
+        },
+    },
 ]
 
 start_chat_log = [
@@ -237,18 +250,39 @@ def pretty_print_conversation(messages):
         "assistant": "blue",
         "tool": "magenta",
     }
-    
+
     for message in messages:
         if message["role"] == "system":
-            print(colored(f"system: {message['content']}\n", role_to_color[message["role"]]))
+            # print(
+            #     colored(
+            #         f"system: {message['content']}\n", role_to_color[message["role"]]
+            #     )
+            # )
+            continue
         elif message["role"] == "user":
-            print(colored(f"user: {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(f"user: {message['content']}\n", role_to_color[message["role"]])
+            )
         elif message["role"] == "assistant" and message.get("function_call"):
-            print(colored(f"assistant: {message['function_call']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"assistant: {message['function_call']}\n",
+                    role_to_color[message["role"]],
+                )
+            )
         elif message["role"] == "assistant" and not message.get("function_call"):
-            print(colored(f"assistant: {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"assistant: {message['content']}\n", role_to_color[message["role"]]
+                )
+            )
         elif message["role"] == "tool":
-            print(colored(f"function ({message['name']}): {message['content']}\n", role_to_color[message["role"]]))
+            print(
+                colored(
+                    f"function ({message['name']}): {message['content']}\n",
+                    role_to_color[message["role"]],
+                )
+            )
 
 
 def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
@@ -259,25 +293,44 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
     chat_log = chat_log + [{"role": "user", "content": question}]
 
     response = openAI_client.chat.completions.create(
-        model="gpt-3.5-turbo", 
-        messages=chat_log, 
-        tools=tools, 
-        tool_choice="auto"
+        model="gpt-3.5-turbo-1106",
+        messages=chat_log,
+        tools=tools,
+        tool_choice="auto",
     )
 
-    print(chat_log)
-
     response_message = response.choices[0].message
+    # print(response_message)
     tool_calls = response_message.tool_calls
 
     # Check if the model wanted to call a function
     if tool_calls:
+        
         available_functions = {
             "book_appointment": book_appointment,
         }
+        
+        # Iterate through tool_calls and restructure into json to send back to the model
+        new_tool_calls = []
+        for tool_call in tool_calls:
+            temp = {
+                "id": tool_call.id,
+                "type": "function",
+                "function": {
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                }
+            }
+            new_tool_calls.append(temp)
+
+        newMessage = {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": new_tool_calls,
+        }
 
         # extend conversation with model's reply
-        chat_log.append(response_message)
+        chat_log.append(newMessage)
 
         # send the info for each function call and function response to the model
         for tool_call in tool_calls:
@@ -302,15 +355,15 @@ def askgpt(question: str, chat_log: list = None) -> tuple[str, list]:
 
         # get a new response from the model where it can see the function response
         second_response = openAI_client.chat.completions.create(
-            model="gpt-3.5-turbo", messages=chat_log
+            model="gpt-3.5-turbo-1106", messages=chat_log
         )
 
         answer = second_response.choices[0].message.content
     else:
         answer = response.choices[0].message.content
-    
+
     chat_log = chat_log + [{"role": "assistant", "content": answer}]
-    # pretty_print_conversation(chat_log)
+    pretty_print_conversation(chat_log)
     return answer, chat_log
 
 
@@ -323,7 +376,7 @@ async def send_message(content: str, sender_number: str, twilio_number: str) -> 
     return
 
 
-def book_appointment(date: str, time: str) -> None:
+def book_appointment(date: str, time: str) -> str:
     print("Booking Appointment...")
     return json.dumps({"date booked": date, "time booked": time})
 
@@ -333,5 +386,8 @@ def end_conversation():
     return json.dumps({"end conversation": True})
 
 
-def create_estime():
-    pass
+def get_current_date_and_time():
+    current_date_time = datetime.now()
+    print(current_date_time)
+    return current_date_time
+
