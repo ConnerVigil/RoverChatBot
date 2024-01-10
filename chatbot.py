@@ -101,6 +101,60 @@ def askgpt(
     return answer
 
 
+def pull_together_current_conversation(sender_phone_number: str) -> list:
+    # check if the phone number is registered as a user
+    result = get_user_by_phone_number(sender_phone_number)
+
+    if len(result.data) == 0:
+        # if not, register the phone number as a user
+
+        # insert new user into the db
+        user_insert_result = add_user(sender_phone_number)
+
+        # then get the user id and insert a new conversation into the db
+        user_id = user_insert_result.data[0]["id"]
+        conversation_insert_result = add_conversation(user_id)
+
+        # then get the conversation id
+        conversation_id = conversation_insert_result.data[0]["id"]
+
+        # then get the context and put it into the chat log
+        context_result = get_context_by_phone_number(sender_phone_number)
+        chat_log = []
+        if len(context_result.data) == 1:
+            chat_log.append(
+                {"role": "system", "content": context_result.data[0]["content"]}
+            )
+    elif len(result.data) == 1:
+        # if yes
+
+        # get the user id and get the most recent conversation id
+        user_id = result.data[0]["id"]
+        conversation_result = get_conversation_by_user_id(user_id)
+        conversation_id = conversation_result.data[0]["id"]
+
+        # get the context first and put it into the chat log
+        chat_log = []
+        context_result = get_context_by_phone_number(sender_phone_number)
+
+        if len(context_result.data) == 1:
+            chat_log.append(
+                {"role": "system", "content": context_result.data[0]["content"]}
+            )
+
+        # then grab all the messages from that conversation and put them into chat_log
+        message_result = get_messages_by_conversation_id(conversation_id)
+
+        for message in message_result.data:
+            chat_log.append({"role": message["role"], "content": message["content"]})
+
+    else:
+        print("ERROR - more than one user with the same phone number")
+        return []
+
+    return user_id, conversation_id, chat_log
+
+
 def book_appointment(date: str, time: str) -> str:
     print("Booking Appointment...")
     return json.dumps({"date booked": date, "time booked": time})
@@ -115,6 +169,10 @@ def end_conversation():
 def get_current_date_and_time() -> str:
     current_date_time = datetime.now()
     return current_date_time.isoformat()
+
+
+def save_personal_information(first_name: str, last_name: str, email: str) -> str:
+    pass
 
 
 def pretty_print_conversation(messages):

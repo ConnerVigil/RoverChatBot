@@ -17,7 +17,7 @@ flask run --port 8000 --debug
 ## How to use Ngrok for testing
 
 ```
-ngrok http 8000
+ngrok http --domain=doe-up-muskox.ngrok-free.app 8000
 ```
 
 ## Linux Services
@@ -103,4 +103,10 @@ For example:
 
 ```
 psql 'postgresql://postgres:postgres@localhost:54322/postgres'
+```
+
+## Formatting
+
+```
+black .
 ```
