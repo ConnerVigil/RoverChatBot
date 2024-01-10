@@ -1,85 +1,17 @@
-import os
-from dotenv import load_dotenv
-from openai import OpenAI
-from twilio.rest import Client
 import json
 from flask import session
 from termcolor import colored
 from datetime import datetime
-from supabase import create_client
-
-load_dotenv()
-
-supabase = create_client(os.getenv("SUPABASE_URL_TEST"), os.getenv("SUPABASE_KEY_TEST"))
-
-openAI_client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
-)
-
-twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
-
-tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "book_appointment",
-            "description": "Book an appointment for the customer",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "date": {
-                        "type": "string",
-                        "description": "The date of the appointment",
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "The time of the appointment",
-                    },
-                },
-                "required": ["date", "time"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "end_conversation",
-            "description": "End the conversation when customer is satisfied with the service",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "get_current_date_and_time",
-            "description": "Get the current date and time",
-            "parameters": {
-                "type": "object",
-                "properties": {},
-                "required": [],
-            },
-        },
-    },
-]
+from tools import tools
+from db_services import *
+from clients import openAI_client
 
 
 def askgpt(
     question: str, user_id: str, conversation_id: str, chat_log: list = None
 ) -> str:
     chat_log.append({"role": "user", "content": question})
-
-    supabase.table("Messages").insert(
-        {
-            "content": question,
-            "role": "user",
-            "user_id": user_id,
-            "conversation_id": conversation_id,
-        }
-    ).execute()
+    add_message(question, "user", user_id, conversation_id)
 
     response = openAI_client.chat.completions.create(
         model="gpt-3.5-turbo-1106",
@@ -164,26 +96,9 @@ def askgpt(
         answer = response.choices[0].message.content
 
     chat_log = chat_log + [{"role": "assistant", "content": answer}]
-
-    supabase.table("Messages").insert(
-        {
-            "content": answer,
-            "role": "assistant",
-            "user_id": user_id,
-            "conversation_id": conversation_id,
-        }
-    ).execute()
-
+    add_message(answer, "assistant", user_id, conversation_id)
     pretty_print_conversation(chat_log)
     return answer
-
-
-async def send_message(content: str, sender_number: str, twilio_number: str) -> None:
-    twilio_client.messages.create(
-        body=content,
-        from_=twilio_number,
-        to=sender_number,
-    )
 
 
 def book_appointment(date: str, time: str) -> str:

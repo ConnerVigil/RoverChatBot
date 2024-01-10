@@ -76,7 +76,7 @@ You can use the supabase stop command at any time to stop all services (without 
 To create a migration, then push it to remote
 
 ```
-supabase db diff -f addingContexts
+supabase db diff -f nameOfNewMigration
 supabase db push
 ```
 
