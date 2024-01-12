@@ -1,5 +1,4 @@
 import json
-from flask import session
 from termcolor import colored
 from datetime import datetime
 from tools import tools
@@ -161,7 +160,6 @@ def book_appointment(date: str, time: str) -> str:
 
 
 def end_conversation():
-    session.clear()
     print("Conversation Ended")
     return json.dumps({"end conversation": True})
 
