@@ -1,7 +1,6 @@
 import json
 from termcolor import colored
-from datetime import datetime
-from tools import tools
+from openai_functions import tools, available_functions
 from db_services import *
 from clients import openAI_client
 
@@ -9,6 +8,18 @@ from clients import openAI_client
 def askgpt(
     question: str, user_id: str, conversation_id: str, chat_log: list = None
 ) -> str:
+    """
+    Ask the GPT-3 model a question
+
+    Args:
+        question (str): The question to ask the model
+        user_id (str): The id of the user
+        conversation_id (str): The id of the conversation
+        chat_log (list, optional): The history of the conversation. Defaults to None.
+
+    Returns:
+        str: The answer from the model
+    """
     chat_log.append({"role": "user", "content": question})
     add_message(question, "user", user_id, conversation_id)
 
@@ -21,24 +32,10 @@ def askgpt(
 
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
+    print(tool_calls)
 
     # Check if the model wanted to call a function
     if tool_calls:
-        available_functions = {
-            "book_appointment": {
-                "function": book_appointment,
-                "parameters": ["date", "time"],
-            },
-            "end_conversation": {
-                "function": end_conversation,
-                "parameters": [],
-            },
-            "get_current_date_and_time": {
-                "function": get_current_date_and_time,
-                "parameters": [],
-            },
-        }
-
         # Iterate through tool_calls and restructure into json to send back to the model
         new_tool_calls = []
         for tool_call in tool_calls:
@@ -60,7 +57,9 @@ def askgpt(
 
         # extend conversation with model's reply
         chat_log.append(newMessage)
-        # choosing not to insert the tool calls into the database for now
+
+        # insert the tool call into the db as a message
+        # add_message(None, "assistant", user_id, conversation_id)
 
         for tool_call in tool_calls:
             function_name = tool_call.function.name
@@ -75,6 +74,9 @@ def askgpt(
                     param: function_args.get(param) for param in function_parameters
                 }
 
+                if function_name == "save_customers_personal_information":
+                    function_args["phone_number"] = get_user_by_id(user_id).data[0]["phone_number"]
+
                 function_response = function_to_call(**function_args)
                 chat_log.append(
                     {
@@ -84,7 +86,9 @@ def askgpt(
                         "content": function_response,
                     }
                 )
+                add_message(function_response, "tool", user_id, conversation_id)
 
+        print(chat_log)
         # get a new response from the model where it can see the function response
         second_response = openAI_client.chat.completions.create(
             model="gpt-3.5-turbo-1106", messages=chat_log
@@ -100,7 +104,16 @@ def askgpt(
     return answer
 
 
-def pull_together_current_conversation(sender_phone_number: str) -> list:
+def retrieve_current_conversation(sender_phone_number: str) -> list:
+    """
+    Retrieves all the information needed to continue a conversation
+
+    Args:
+        sender_phone_number (str): The phone number of the sender
+
+    Returns:
+        list: A list containing the user id, conversation id, and chat log
+    """
     # check if the phone number is registered as a user
     result = get_user_by_phone_number(sender_phone_number)
 
@@ -125,12 +138,17 @@ def pull_together_current_conversation(sender_phone_number: str) -> list:
                 {"role": "system", "content": context_result.data[0]["content"]}
             )
     elif len(result.data) == 1:
-        # if yes
+        # if yes, check if there is an active conversation
 
         # get the user id and get the most recent conversation id
         user_id = result.data[0]["id"]
         conversation_result = get_conversation_by_user_id(user_id)
         conversation_id = conversation_result.data[0]["id"]
+
+        if not check_if_conversation_is_active(conversation_id):
+            # if not, insert a new conversation into the db
+            conversation_insert_result = add_conversation(user_id)
+            conversation_id = conversation_insert_result.data[0]["id"]
 
         # get the context first and put it into the chat log
         chat_log = []
@@ -154,26 +172,13 @@ def pull_together_current_conversation(sender_phone_number: str) -> list:
     return user_id, conversation_id, chat_log
 
 
-def book_appointment(date: str, time: str) -> str:
-    print("Booking Appointment...")
-    return json.dumps({"date booked": date, "time booked": time})
-
-
-def end_conversation():
-    print("Conversation Ended")
-    return json.dumps({"end conversation": True})
-
-
-def get_current_date_and_time() -> str:
-    current_date_time = datetime.now()
-    return current_date_time.isoformat()
-
-
-def save_personal_information(first_name: str, last_name: str, email: str) -> str:
-    pass
-
-
 def pretty_print_conversation(messages):
+    """
+    Prints the conversation in a pretty format
+
+    Args:
+        messages (_type_): The messages to print
+    """
     role_to_color = {
         "system": "red",
         "user": "green",
