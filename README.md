@@ -5,7 +5,7 @@
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install openai twilio 'flask[async]' python-dotenv pyngrok black
+pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors
 ```
 
 ## How to start server
