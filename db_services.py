@@ -17,6 +17,7 @@ def get_user_by_phone_number(phone_number: str):
     res = supabase.table("Users").select("*").eq("phone_number", phone_number).execute()
     return res
 
+
 def get_user_by_id(user_id: str):
     """
     Get a user by id from the database
@@ -149,7 +150,15 @@ def get_messages_by_conversation_id(conversation_id: str):
     return res
 
 
-def add_message(content: str, role: str, user_id: str, conversation_id: str):
+def add_message(
+    content: str,
+    role: str,
+    user_id: str,
+    conversation_id: str,
+    tool_calls: list = [],
+    tool_call_id: str = None,
+    function_name: str = None,
+):
     """
     Insert a message into the database
 
@@ -158,6 +167,9 @@ def add_message(content: str, role: str, user_id: str, conversation_id: str):
         role (str): Role of the user who sent the message
         user_id (str): The id of the user
         conversation_id (str): The id of the conversation
+        tool_calls (list, optional): A list of new tool calls. Defaults to None.
+        tool_call_id (str, optional): The id of the tool call. Defaults to None.
+        function_name (str, optional): The name of the function called as a tool. Defaults to None.
 
     Returns:
         _type_: The result of the query
@@ -170,6 +182,9 @@ def add_message(content: str, role: str, user_id: str, conversation_id: str):
                 "role": role,
                 "user_id": user_id,
                 "conversation_id": conversation_id,
+                "tool_calls": tool_calls,
+                "tool_call_id": tool_call_id,
+                "function_name": function_name,
             }
         )
         .execute()
@@ -180,7 +195,7 @@ def add_message(content: str, role: str, user_id: str, conversation_id: str):
 def check_if_conversation_is_active(conversation_id: str) -> bool:
     """
     Uses the conversation id to check if the conversation is active.
-    Inactive conversations are conversations in which at 3 days have 
+    Inactive conversations are conversations in which at 3 days have
     passed since the last message was sent.
 
     Args:

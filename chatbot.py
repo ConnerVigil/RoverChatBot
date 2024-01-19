@@ -4,6 +4,8 @@ from openai_functions import tools, available_functions
 from db_services import *
 from clients import openAI_client
 
+CHATGPT_MODEL = "gpt-3.5-turbo-1106"
+
 
 def askgpt(
     question: str, user_id: str, conversation_id: str, chat_log: list = None
@@ -21,10 +23,12 @@ def askgpt(
         str: The answer from the model
     """
     chat_log.append({"role": "user", "content": question})
-    add_message(question, "user", user_id, conversation_id)
+    add_message(
+        content=question, role="user", user_id=user_id, conversation_id=conversation_id
+    )
 
     response = openAI_client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model=CHATGPT_MODEL,
         messages=chat_log,
         tools=tools,
         tool_choice="auto",
@@ -32,35 +36,42 @@ def askgpt(
 
     response_message = response.choices[0].message
     tool_calls = response_message.tool_calls
-    print(tool_calls)
 
     # Check if the model wanted to call a function
     if tool_calls:
         # Iterate through tool_calls and restructure into json to send back to the model
         new_tool_calls = []
         for tool_call in tool_calls:
-            temp = {
-                "id": tool_call.id,
-                "type": "function",
-                "function": {
-                    "name": tool_call.function.name,
-                    "arguments": tool_call.function.arguments,
-                },
-            }
-            new_tool_calls.append(temp)
-
-        newMessage = {
-            "role": "assistant",
-            "content": None,
-            "tool_calls": new_tool_calls,
-        }
+            new_tool_calls.append(
+                {
+                    "id": tool_call.id,
+                    "type": "function",
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments,
+                    },
+                }
+            )
 
         # extend conversation with model's reply
-        chat_log.append(newMessage)
+        chat_log.append(
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": new_tool_calls,
+            }
+        )
 
         # insert the tool call into the db as a message
-        # add_message(None, "assistant", user_id, conversation_id)
+        add_message(
+            content=None,
+            role="assistant",
+            user_id=user_id,
+            conversation_id=conversation_id,
+            tool_calls=new_tool_calls,
+        )
 
+        # insert all tool calls into the db and chat log
         for tool_call in tool_calls:
             function_name = tool_call.function.name
             function_info = available_functions.get(function_name)
@@ -75,7 +86,9 @@ def askgpt(
                 }
 
                 if function_name == "save_customers_personal_information":
-                    function_args["phone_number"] = get_user_by_id(user_id).data[0]["phone_number"]
+                    function_args["phone_number"] = get_user_by_id(user_id).data[0][
+                        "phone_number"
+                    ]
 
                 function_response = function_to_call(**function_args)
                 chat_log.append(
@@ -86,12 +99,19 @@ def askgpt(
                         "content": function_response,
                     }
                 )
-                add_message(function_response, "tool", user_id, conversation_id)
 
-        print(chat_log)
+                add_message(
+                    content=function_response,
+                    role="tool",
+                    user_id=user_id,
+                    conversation_id=conversation_id,
+                    tool_call_id=tool_call.id,
+                    function_name=function_name,
+                )
+
         # get a new response from the model where it can see the function response
         second_response = openAI_client.chat.completions.create(
-            model="gpt-3.5-turbo-1106", messages=chat_log
+            model=CHATGPT_MODEL, messages=chat_log
         )
 
         answer = second_response.choices[0].message.content
@@ -99,7 +119,12 @@ def askgpt(
         answer = response.choices[0].message.content
 
     chat_log = chat_log + [{"role": "assistant", "content": answer}]
-    add_message(answer, "assistant", user_id, conversation_id)
+    add_message(
+        content=answer,
+        role="assistant",
+        user_id=user_id,
+        conversation_id=conversation_id,
+    )
     pretty_print_conversation(chat_log)
     return answer
 
@@ -163,13 +188,40 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
         message_result = get_messages_by_conversation_id(conversation_id)
 
         for message in message_result.data:
-            chat_log.append({"role": message["role"], "content": message["content"]})
+            new_message = {
+                "role": message["role"],
+                "content": message["content"],
+            }
+
+            if message["tool_calls"] != []:
+                new_message["tool_calls"] = message["tool_calls"]
+
+            if message["tool_call_id"] != None:
+                new_message["tool_call_id"] = message["tool_call_id"]
+
+            if message["function_name"] != None:
+                new_message["name"] = message["function_name"]
+
+            chat_log.append(new_message)
 
     else:
         print("ERROR - more than one user with the same phone number")
         return []
 
     return user_id, conversation_id, chat_log
+
+
+def print_chat_log_without_context(chat_log: list):
+    """
+    Prints the chat log without the context for debugging purposes
+
+    Args:
+        chat_log (list): The chat log to print
+    """
+    temp_log = chat_log.copy()
+    temp_log[0] = {}
+    for message in temp_log:
+        print(message)
 
 
 def pretty_print_conversation(messages):
