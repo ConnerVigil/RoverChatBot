@@ -6,19 +6,31 @@
 2. Make an account on OpenAI to get an API key
 3. Get added to Supabase Team Org. You will need URL and Key
 
-## How to create Python instance
+
+## How to create Python instance on MacOS
 
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors
+pip install openai twilio flask 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors
 ```
+
+
+## How to create Python instance on Windows
+```
+python -m venv venv
+venv/scripts/Activate.ps1   # if using Powershell in terminal
+pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors flask
+```
+
+
 
 ## How to start server
 
 ```
-flask run --port 8000 --debug
+flask run --port 8000 --debug 
 ```
+
 
 ## How to use Ngrok for testing
 
