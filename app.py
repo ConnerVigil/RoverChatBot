@@ -8,6 +8,9 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+TWILIO_NUMBER = "+13134258270"
+CONNER_NUMBER = "+18013896501"
+
 
 @app.route("/bot", methods=["POST"])
 async def bot():
@@ -86,6 +89,34 @@ async def greeting():
     response = VoiceResponse()
     response.hangup()
     return str(response)
+
+
+@app.route("/misssedCall", methods=["POST"])
+async def test():
+    await send_message(
+        f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
+    )
+    try:
+        validation_token = request.headers.get("Validation-Token")
+
+        if "application/json" not in request.content_type:
+            raise ValueError(
+                f"Invalid Content-Type: {request.content_type}. Expected application/json."
+            )
+
+        # json_data = request.get_json()
+        # if json_data is None:
+        #     raise ValueError("Invalid JSON data or missing Content-Type header")
+
+        # print(f"Received JSON data: {json_data}")
+
+        return Response(status=200, headers={"Validation-Token": validation_token})
+    except ValueError as ve:
+        print(f"Error processing JSON data: {ve}")
+        return jsonify(error="Bad Request"), 400
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify(error="Internal Server Error"), 500
 
 
 if __name__ == "__main__":

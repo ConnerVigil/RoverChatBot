@@ -2,8 +2,14 @@ import os
 from dotenv import load_dotenv
 import sys
 from ringcentral import SDK
+import json
 
 load_dotenv()
+
+# https://developers.ringcentral.com/my-account.html#/applications
+
+TEST_ACCOUNT_ID = 409190004
+TEST_EXTENSION_ID = 101
 
 rcsdk = SDK(
     os.getenv("RING_CENTRAL_CLIENT_ID"),
@@ -17,34 +23,39 @@ try:
 except Exception as e:
     sys.exit("Unable to authenticate to platform: " + str(e))
 
-resp = platform.get("/restapi/v1.0/subscription")
-jsonObj = resp.json()
 
-for record in jsonObj.records:
-    print(f"| Extension: {record.id}", end="")
-    print(f"| Name: {record.uri}", end="")
-    print(f"| Type: {record.type}")
+def print_pretty(res: str):
+    json_data = json.loads(res)
+    json_string = json.dumps(json_data, indent=2, sort_keys=True)
+    print(json_string)
 
 
-# How to create a subscription
-# POST BODY
-body = {"eventFilters": ["<ENTER VALUE>"], "expiresIn": 000}
+# Get the account information
+# r = platform.get(f'/restapi/v1.0/account/{TEST_ACCOUNT_ID}')
+# print_pretty(r.text())
 
-platform.login(os.environ["username"], os.environ["extension"], os.environ["password"])
-r = platform.post("/restapi/v1.0/subscription", body)
-# PROCESS RESPONSE
 
-# JSON
-# POST /restapi/v1.0/subscription
-{
+# create a subscription
+body = {
     "eventFilters": [
-        "/restapi/v1.0/account/~/extension/~/presence",
-        "/restapi/v1.0/account/~/extension/~/message-store",
-        "/restapi/v1.0/account/~/telephony/sessions",
-        "/restapi/v1.0/account/~/extension/~/presence?detailedTelephonyState=true&sipData=true",
+        f"/restapi/v1.0/account/{409190004}/telephony/sessions?missedCall=true",
     ],
     "deliveryMode": {
         "transportType": "WebHook",
-        "address": "https://consumer-host.example.com/consumer/path",
+        "address": "https://doe-up-muskox.ngrok-free.app/test",
     },
+    "expiresIn": 60,
 }
+r = platform.post("/restapi/v1.0/subscription", body)
+print_pretty(r.text())
+
+# get a list of subscriptions
+# resp = platform.get("/restapi/v1.0/subscription")
+# print_pretty(resp.text())
+
+
+# List Company Phone Numbers
+# r = platform.get(
+#     f"/restapi/v1.0/account/{TEST_ACCOUNT_ID}/phone-number"
+# )
+# print_pretty(r.text())
