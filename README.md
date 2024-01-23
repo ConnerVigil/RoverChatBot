@@ -20,7 +20,7 @@ pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor s
 ```
 python -m venv venv
 venv/scripts/Activate.ps1   # if using Powershell in terminal
-pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors flask
+pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors flask ringcentral
 ```
 
 
