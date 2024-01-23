@@ -12,14 +12,14 @@ TEST_ACCOUNT_ID = 409190004
 TEST_EXTENSION_ID = 101
 
 rcsdk = SDK(
-    os.getenv("RING_CENTRAL_CLIENT_ID"),
-    os.getenv("RING_CENTRAL_CLIENT_SECRET"),
-    os.getenv("RING_CENTRAL_SERVER_URL"),
+    os.getenv("RC_SANDBOX_CLIENT_ID"),
+    os.getenv("RC_SANDBOX_CLIENT_SECRET"),
+    os.getenv("RC_SERVER_URL"),
 )
 
 platform = rcsdk.platform()
 try:
-    platform.login(jwt=os.getenv("RING_CENTRAL_JWT"))
+    platform.login(jwt=os.getenv("RC_SANDBOX_JWT"))
 except Exception as e:
     sys.exit("Unable to authenticate to platform: " + str(e))
 
@@ -31,8 +31,8 @@ def print_pretty(res: str):
 
 
 # Get the account information
-# r = platform.get(f'/restapi/v1.0/account/{TEST_ACCOUNT_ID}')
-# print_pretty(r.text())
+r = platform.get(f'/restapi/v1.0/account/~')
+print_pretty(r.text())
 
 
 # create a subscription
