@@ -36,18 +36,18 @@ def print_pretty(res: str):
 
 
 # create a subscription
-body = {
-    "eventFilters": [
-        f"/restapi/v1.0/account/{409190004}/telephony/sessions?missedCall=true",
-    ],
-    "deliveryMode": {
-        "transportType": "WebHook",
-        "address": "https://doe-up-muskox.ngrok-free.app/missedCall",
-    },
-    "expiresIn": 60,
-}
-r = platform.post("/restapi/v1.0/subscription", body)
-print_pretty(r.text())
+# body = {
+#     "eventFilters": [
+#         f"/restapi/v1.0/account/{409190004}/telephony/sessions?missedCall=true",
+#     ],
+#     "deliveryMode": {
+#         "transportType": "WebHook",
+#         "address": "https://doe-up-muskox.ngrok-free.app/missedCall",
+#     },
+#     "expiresIn": 60,
+# }
+# r = platform.post("/restapi/v1.0/subscription", body)
+# print_pretty(r.text())
 
 # get a list of subscriptions
 resp = platform.get("/restapi/v1.0/subscription")
