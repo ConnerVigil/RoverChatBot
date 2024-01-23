@@ -12,14 +12,14 @@ TEST_ACCOUNT_ID = 409190004
 TEST_EXTENSION_ID = 101
 
 rcsdk = SDK(
-    os.getenv("RC_SANDBOX_CLIENT_ID"),
-    os.getenv("RC_SANDBOX_CLIENT_SECRET"),
-    os.getenv("RC_SERVER_URL"),
+    os.getenv("RC_TEST_CLIENT_ID"),
+    os.getenv("RC_TEST_CLIENT_SECRET"),
+    os.getenv("RC_TEST_SERVER_URL"),
 )
 
 platform = rcsdk.platform()
 try:
-    platform.login(jwt=os.getenv("RC_SANDBOX_JWT"))
+    platform.login(jwt=os.getenv("RC_TEST_JWT"))
 except Exception as e:
     sys.exit("Unable to authenticate to platform: " + str(e))
 
@@ -31,27 +31,27 @@ def print_pretty(res: str):
 
 
 # Get the account information
-r = platform.get(f'/restapi/v1.0/account/~')
-print_pretty(r.text())
+# r = platform.get(f'/restapi/v1.0/account/~')
+# print_pretty(r.text())
 
 
 # create a subscription
-# body = {
-#     "eventFilters": [
-#         f"/restapi/v1.0/account/{409190004}/telephony/sessions?missedCall=true",
-#     ],
-#     "deliveryMode": {
-#         "transportType": "WebHook",
-#         "address": "https://doe-up-muskox.ngrok-free.app/test",
-#     },
-#     "expiresIn": 60,
-# }
-# r = platform.post("/restapi/v1.0/subscription", body)
-# print_pretty(r.text())
+body = {
+    "eventFilters": [
+        f"/restapi/v1.0/account/{409190004}/telephony/sessions?missedCall=true",
+    ],
+    "deliveryMode": {
+        "transportType": "WebHook",
+        "address": "https://doe-up-muskox.ngrok-free.app/missedCall",
+    },
+    "expiresIn": 60,
+}
+r = platform.post("/restapi/v1.0/subscription", body)
+print_pretty(r.text())
 
 # get a list of subscriptions
-# resp = platform.get("/restapi/v1.0/subscription")
-# print_pretty(resp.text())
+resp = platform.get("/restapi/v1.0/subscription")
+print_pretty(resp.text())
 
 
 # List Company Phone Numbers

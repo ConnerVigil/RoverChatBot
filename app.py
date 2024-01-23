@@ -91,11 +91,11 @@ async def greeting():
     return str(response)
 
 
-@app.route("/misssedCall", methods=["POST"])
+@app.route("/missedCall", methods=["POST"])
 async def test():
-    await send_message(
-        f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
-    )
+    # await send_message(
+    #     f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
+    # )
     try:
         validation_token = request.headers.get("Validation-Token")
 
