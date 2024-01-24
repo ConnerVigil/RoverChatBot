@@ -93,9 +93,10 @@ async def greeting():
 
 @app.route("/missedCall", methods=["POST"])
 async def test():
-    # await send_message(
-    #     f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
-    # )
+    await send_message(
+        f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
+    )
+    # insert into supabase missed call
     try:
         validation_token = request.headers.get("Validation-Token")
 

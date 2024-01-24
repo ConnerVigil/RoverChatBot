@@ -5,7 +5,7 @@ from db_services import *
 
 def book_appointment(date: str, time: str) -> str:
     """
-    Books an appointment
+    Books an appointment for an inspection
 
     Args:
         date (str): The date of the appointment
@@ -32,7 +32,7 @@ def get_current_date_and_time() -> str:
 def save_customers_personal_information(
     phone_number: str, first_name: str = None, last_name: str = None, email: str = None
 ):
-    """Saves the customer's personal information to the database 
+    """Saves the customer's personal information to the database
 
     Args:
         phone_number (str): The phone number of the customer
