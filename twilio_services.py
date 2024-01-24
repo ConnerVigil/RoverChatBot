@@ -1,11 +1,11 @@
 from clients import twilio_client
 
 
-async def send_message(
+async def send_message_twilio(
     content: str, receiving_number: str, sending_number: str
 ) -> None:
     """
-    Sends a text message to a user
+    Sends a text message to a user using Twilio
 
     Args:
         content (str): The message to be sent
