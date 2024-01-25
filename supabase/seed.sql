@@ -1,6 +1,3 @@
--- ALTER TABLE your_table_name
--- ADD COLUMN new_jsonb_array_column JSONB[] DEFAULT ARRAY[]::jsonb[];
-
 INSERT INTO "public"."Contexts" 
 ("id", "created_at", "company_name", "company_phone_number", "content") 
 VALUES 

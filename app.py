@@ -15,7 +15,7 @@ CONNER_NUMBER = "+18013896501"
 @app.route("/bot", methods=["POST"])
 async def bot():
     """
-    Main function for the bot. This is the function that Twilio
+    Main endpoint for the bot. This is the endpoint that Twilio
     will call when a user sends a message to the bot.
 
     Returns:
@@ -30,9 +30,9 @@ async def bot():
 
 async def async_helper(question, sender_number, twilio_number):
     user_id, conversation_id, chat_log = retrieve_current_conversation(sender_number)
+    chat_log.append({"role": "user", "content": question})
     answer = askgpt(question, user_id, conversation_id, chat_log)
     await send_message_twilio(answer, sender_number, twilio_number)
-    return
 
 
 @app.route("/devbot", methods=["POST"])
@@ -47,10 +47,48 @@ def devbot():
     question = data["question"]
     sender_phone_number = data["phone_number"]
 
+
+
+    # # --------------------------------------------------------------------------
+    # # Get conversation id
+    # conversation_id = get_conversation_id_by_phone_number(sender_phone_number)
+
+    # # Insert into message_queue (can’t have duplicates in db)
+    # insert_into_message_queue(conversation_id)
+
+    # # Wait 10 seconds
+    # time.sleep(10)
+
+    # # Check if there is a conversation in the conversation_queue
+    # conversation_res = get_conversation_from_queue(conversation_id)
+
+    # # If there is no entry in the queue, end function
+    # if len(conversation_res.data) == 0:
+    #     return
+    
+    # # Remove the entry in the conversation queue
+    # remove_conversation_from_queue(conversation_id)
+
+    # # Get chat log
+    # chat_log = get_chat_log_by_conversation_id(conversation_id)
+
+    # # Get user id
+    # res = get_user_by_phone_number(sender_phone_number)
+    # user_id = res.data[0]["id"]
+
+    # # Process question with chatgpt
+    # answer = askgpt(question, user_id, conversation_id, chat_log)
+    # # --------------------------------------------------------------------------
+
+
+
+    
+
     user_id, conversation_id, chat_log = retrieve_current_conversation(
         sender_phone_number
     )
 
+    chat_log.append({"role": "user", "content": question})
     answer = askgpt(question, user_id, conversation_id, chat_log)
     response = jsonify({"answer": answer})
     response.status_code = 200
