@@ -1,4 +1,4 @@
-from clients import openai_client
+from clients import openAI_client
 
 def create_gpt_response(model, messages, tools=None, tool_choice=None):
     """Uses the Open AI client to make a response with the conversation so far and other parameters. 
@@ -13,11 +13,11 @@ def create_gpt_response(model, messages, tools=None, tool_choice=None):
         _type_: _description_
     """
     if tools is None and tool_choice is None:
-        return openai_client.chat.completions.create(
+        return openAI_client.chat.completions.create(
             model=model,
             messages=messages
         )
-    return openai_client.chat.completions.create(
+    return openAI_client.chat.completions.create(
         model=model,
         messages=messages,
         tools=tools,
