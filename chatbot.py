@@ -22,7 +22,7 @@ def askgpt(
     Returns:
         str: The answer from the model
     """
-    chat_log.append({"role": "user", "content": question})
+
     add_message(
         content=question, role="user", user_id=user_id, conversation_id=conversation_id
     )
@@ -125,7 +125,7 @@ def askgpt(
         user_id=user_id,
         conversation_id=conversation_id,
     )
-    pretty_print_conversation(chat_log)
+
     return answer
 
 
@@ -226,7 +226,7 @@ def print_chat_log_without_context(chat_log: list):
 
 def pretty_print_conversation(messages):
     """
-    Prints the conversation in a pretty format
+    Prints the conversation in a pretty format for debugging purposes
 
     Args:
         messages (_type_): The messages to print

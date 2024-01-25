@@ -109,6 +109,25 @@ def add_conversation(user_id: str):
     return res
 
 
+def get_conversation_by_id(conversation_id: str):
+    """
+    Get a conversation by id from the database
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Conversations")
+        .select("*")
+        .eq("id", conversation_id)
+        .execute()
+    )
+    return res
+
+
 def get_conversation_by_user_id(user_id: str):
     """
     Get the most recent conversation by user id from the database
@@ -223,3 +242,41 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
         return True
     else:
         return False
+
+
+def insert_into_message_queue(conversation_id: str):
+    """
+    Insert a conversation into the message queue
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Conversation_Queue")
+        .insert({"conversation_id": conversation_id})
+        .execute()
+    )
+    return res
+
+
+def remove_from_message_queue(conversation_id: str):
+    """
+    Remove a conversation from the message queue
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Conversation_Queue")
+        .delete()
+        .eq("conversation_id", conversation_id)
+        .execute()
+    )
+    return res
+
