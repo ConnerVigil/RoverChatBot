@@ -2,7 +2,7 @@ from flask import Flask, request, Response, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
 from chatbot import askgpt, retrieve_current_conversation
-from twilio_services import send_message
+from twilio_services import send_message_twilio
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -31,7 +31,7 @@ async def bot():
 async def async_helper(question, sender_number, twilio_number):
     user_id, conversation_id, chat_log = retrieve_current_conversation(sender_number)
     answer = askgpt(question, user_id, conversation_id, chat_log)
-    await send_message(answer, sender_number, twilio_number)
+    await send_message_twilio(answer, sender_number, twilio_number)
     return
 
 
@@ -81,7 +81,7 @@ async def greeting():
     """
     sender_number = request.values["From"]
     twilio_number = request.values["To"]
-    await send_message(
+    await send_message_twilio(
         "Hello, sorry we missed your call. How can I help you?",
         sender_number,
         twilio_number,
@@ -91,11 +91,12 @@ async def greeting():
     return str(response)
 
 
-@app.route("/misssedCall", methods=["POST"])
+@app.route("/missedCall", methods=["POST"])
 async def test():
-    await send_message(
-        f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
-    )
+    # await send_message_twilio(
+    #     f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
+    # )
+    # insert into supabase missed call
     try:
         validation_token = request.headers.get("Validation-Token")
 
