@@ -23,7 +23,7 @@ def askgpt(
         str: The answer from the model
     """
 
-    add_message(
+    insert_message(
         content=question, role="user", user_id=user_id, conversation_id=conversation_id
     )
 
@@ -63,7 +63,7 @@ def askgpt(
         )
 
         # insert the tool call into the db as a message
-        add_message(
+        insert_message(
             content=None,
             role="assistant",
             user_id=user_id,
@@ -100,7 +100,7 @@ def askgpt(
                     }
                 )
 
-                add_message(
+                insert_message(
                     content=function_response,
                     role="tool",
                     user_id=user_id,
@@ -117,7 +117,7 @@ def askgpt(
         answer = response.choices[0].message.content
 
     chat_log = chat_log + [{"role": "assistant", "content": answer}]
-    add_message(
+    insert_message(
         content=answer,
         role="assistant",
         user_id=user_id,
@@ -144,22 +144,17 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
         # if not, register the phone number as a user
 
         # insert new user into the db
-        user_insert_result = add_user(sender_phone_number)
+        user_insert_result = insert_user(sender_phone_number)
 
         # then get the user id and insert a new conversation into the db
         user_id = user_insert_result.data[0]["id"]
-        conversation_insert_result = add_conversation(user_id)
+        conversation_insert_result = insert_conversation(user_id)
 
         # then get the conversation id
         conversation_id = conversation_insert_result.data[0]["id"]
 
-        # then get the context and put it into the chat log
-        context_result = get_context_by_phone_number(sender_phone_number)
-        chat_log = []
-        if len(context_result.data) == 1:
-            chat_log.append(
-                {"role": "system", "content": context_result.data[0]["content"]}
-            )
+        chat_log = initiate_chat_log_and_get_context(sender_phone_number)
+
     elif len(result.data) == 1:
         # if yes, check if there is an active conversation
 
@@ -170,43 +165,114 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
 
         if not check_if_conversation_is_active(conversation_id):
             # if not, insert a new conversation into the db
-            conversation_insert_result = add_conversation(user_id)
+            conversation_insert_result = insert_conversation(user_id)
             conversation_id = conversation_insert_result.data[0]["id"]
 
-        # get the context first and put it into the chat log
-        chat_log = []
-        context_result = get_context_by_phone_number(sender_phone_number)
-
-        if len(context_result.data) == 1:
-            chat_log.append(
-                {"role": "system", "content": context_result.data[0]["content"]}
-            )
+        chat_log = initiate_chat_log_and_get_context(sender_phone_number)
 
         # then grab all the messages from that conversation and put them into chat_log
-        message_result = get_messages_by_conversation_id(conversation_id)
-
-        for message in message_result.data:
-            new_message = {
-                "role": message["role"],
-                "content": message["content"],
-            }
-
-            if message["tool_calls"] != []:
-                new_message["tool_calls"] = message["tool_calls"]
-
-            if message["tool_call_id"] != None:
-                new_message["tool_call_id"] = message["tool_call_id"]
-
-            if message["function_name"] != None:
-                new_message["name"] = message["function_name"]
-
-            chat_log.append(new_message)
-
+        messages_result = get_messages_by_conversation_id(conversation_id)
+        chat_log = build_chat_log_from_conversation_history(messages_result.data)
     else:
         print("ERROR - more than one user with the same phone number")
         return []
 
     return user_id, conversation_id, chat_log
+
+
+def initiate_chat_log_and_get_context(sender_phone_number: str):
+    chat_log = []
+    context_result = get_context_by_phone_number(sender_phone_number)
+
+    if len(context_result.data) == 1:
+        chat_log.append(
+            {"role": "system", "content": context_result.data[0]["content"]}
+        )
+    return chat_log
+
+
+def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> list:
+    """
+    Builds a chat log from the conversation history
+
+    Args:
+        messages (list): The conversation history (messages)
+
+    Returns:
+        list: The finished chat log
+    """
+    for message in messages:
+        new_message = {
+            "role": message["role"],
+            "content": message["content"],
+        }
+
+        if message["tool_calls"] != []:
+            new_message["tool_calls"] = message["tool_calls"]
+
+        if message["tool_call_id"] != None:
+            new_message["tool_call_id"] = message["tool_call_id"]
+
+        if message["function_name"] != None:
+            new_message["name"] = message["function_name"]
+
+        chat_log.append(new_message)
+
+    return chat_log
+
+
+def get_conversation_id_by_phone_number(sender_phone_number: str) -> str:
+    """
+    Gets the conversation id by the phone number
+
+    Args:
+        sender_phone_number (str): The phone number of the sender
+
+    Returns:
+        str: The conversation id, or None if there is no conversation
+    """
+    result = get_user_by_phone_number(sender_phone_number)
+
+    if len(result.data) == 1:
+        user_id = result.data[0]["id"]
+        conversation_result = get_conversation_by_user_id(user_id)
+        conversation_id = conversation_result.data[0]["id"]
+        return conversation_id
+    else:
+        return None
+
+
+def get_chat_log_by_conversation_id(conversation_id: str) -> list:
+    """
+    Gets the chat log by the conversation id
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        list: The chat log
+    """
+    message_result = get_messages_by_conversation_id(conversation_id)
+    chat_log = []
+
+    for message in message_result.data:
+        new_message = {
+            "role": message["role"],
+            "content": message["content"],
+        }
+
+        if message["tool_calls"] != []:
+            new_message["tool_calls"] = message["tool_calls"]
+
+        if message["tool_call_id"] != None:
+            new_message["tool_call_id"] = message["tool_call_id"]
+
+        if message["function_name"] != None:
+            new_message["name"] = message["function_name"]
+
+        chat_log.append(new_message)
+
+    return chat_log
 
 
 def print_chat_log_without_context(chat_log: list):

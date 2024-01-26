@@ -32,7 +32,7 @@ def get_user_by_id(user_id: str):
     return res
 
 
-def add_user(phone_number: str):
+def insert_user(phone_number: str):
     """
     Insert a user into the database
 
@@ -95,7 +95,7 @@ def get_context_by_phone_number(phone_number: str):
     return res
 
 
-def add_conversation(user_id: str):
+def insert_conversation(user_id: str):
     """
     Insert a conversation into the database
 
@@ -120,10 +120,7 @@ def get_conversation_by_id(conversation_id: str):
         _type_: The result of the query
     """
     res = (
-        supabase.table("Conversations")
-        .select("*")
-        .eq("id", conversation_id)
-        .execute()
+        supabase.table("Conversations").select("*").eq("id", conversation_id).execute()
     )
     return res
 
@@ -169,7 +166,7 @@ def get_messages_by_conversation_id(conversation_id: str):
     return res
 
 
-def add_message(
+def insert_message(
     content: str,
     role: str,
     user_id: str,
@@ -244,9 +241,10 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
         return False
 
 
-def insert_into_message_queue(conversation_id: str):
+def insert_into_conversation_queue(conversation_id: str):
     """
-    Insert a conversation into the message queue
+    Insert a conversation into the message queue only if
+    one does not already exist with the same conversation id
 
     Args:
         conversation_id (str): The id of the conversation
@@ -257,14 +255,37 @@ def insert_into_message_queue(conversation_id: str):
     res = (
         supabase.table("Conversation_Queue")
         .insert({"conversation_id": conversation_id})
+        .on_conflict("conversation_id")
+        .do_nothing()
         .execute()
     )
     return res
 
 
-def remove_from_message_queue(conversation_id: str):
+def get_conversation_from_queue(conversation_id: str):
     """
-    Remove a conversation from the message queue
+    Checks if there is a conversation in the conversation
+    queue matching the conversation id. If there is, it
+    returns the conversation, otherwise it returns None.
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Conversation_Queue")
+        .select("*")
+        .eq("id", conversation_id)
+        .execute()
+    )
+    return res
+
+
+def remove_conversation_from_queue(conversation_id: str):
+    """
+    Removes a conversation from the conversation queue
 
     Args:
         conversation_id (str): The id of the conversation
@@ -279,4 +300,3 @@ def remove_from_message_queue(conversation_id: str):
         .execute()
     )
     return res
-
