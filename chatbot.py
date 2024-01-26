@@ -2,7 +2,7 @@ import json
 from termcolor import colored
 from openai_functions import tools, available_functions
 from db_services import *
-from clients import openAI_client
+from openai_services import *
 
 CHATGPT_MODEL = "gpt-3.5-turbo-1106"
 
@@ -22,12 +22,12 @@ def askgpt(
     Returns:
         str: The answer from the model
     """
-    chat_log.append({"role": "user", "content": question})
+
     add_message(
         content=question, role="user", user_id=user_id, conversation_id=conversation_id
     )
 
-    response = openAI_client.chat.completions.create(
+    response = create_gpt_response(
         model=CHATGPT_MODEL,
         messages=chat_log,
         tools=tools,
@@ -110,11 +110,9 @@ def askgpt(
                 )
 
         # get a new response from the model where it can see the function response
-        second_response = openAI_client.chat.completions.create(
-            model=CHATGPT_MODEL, messages=chat_log
-        )
-
+        second_response = create_gpt_response(model=CHATGPT_MODEL, messages=chat_log)
         answer = second_response.choices[0].message.content
+
     else:
         answer = response.choices[0].message.content
 
@@ -125,7 +123,7 @@ def askgpt(
         user_id=user_id,
         conversation_id=conversation_id,
     )
-    pretty_print_conversation(chat_log)
+
     return answer
 
 
@@ -226,7 +224,7 @@ def print_chat_log_without_context(chat_log: list):
 
 def pretty_print_conversation(messages):
     """
-    Prints the conversation in a pretty format
+    Prints the conversation in a pretty format for debugging purposes
 
     Args:
         messages (_type_): The messages to print
