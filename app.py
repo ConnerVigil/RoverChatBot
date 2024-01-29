@@ -95,12 +95,6 @@ def devbot():
     response.status_code = 200
     return response
 
-@app.route("/testwebhook", methods=["POST"])
-def testwebhook():
-    data = request.get_json()
-    print(data)
-    return Response(status=204)
-
 
 @app.route("/backup", methods=["GET"])
 def backup():
