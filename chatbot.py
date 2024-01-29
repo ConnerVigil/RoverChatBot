@@ -130,7 +130,9 @@ def askgpt(
     return answer
 
 
-def retrieve_current_conversation(sender_phone_number: str) -> list:
+def retrieve_current_conversation(
+    sender_phone_number: str, twilio_phone_number: str
+) -> list:
     """
     Retrieves all the information needed to continue a conversation
 
@@ -144,14 +146,12 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
 
     if len(result.data) == 0:
         user_id, conversation_id = register_user_and_conversation(sender_phone_number)
-        # conversation queue logic here
-        chat_log = initiate_chat_log_and_get_context(sender_phone_number)
+        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
 
     elif len(result.data) == 1:
         user_id = result.data[0]["id"]
         conversation_id = get_conversation_id_of_existing_user(user_id)
-        # conversation queue logic here
-        chat_log = initiate_chat_log_and_get_context(sender_phone_number)
+        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
         messages_result = get_messages_by_conversation_id(conversation_id)
         chat_log = build_chat_log_from_conversation_history(
             messages_result.data, chat_log
@@ -177,16 +177,8 @@ def retrieve_current_conversation_V2(question: str, sender_phone_number: str) ->
         list: The user id, conversation id, and chat lot
     """
     user_id, conversation_id = register_user_and_conversation(sender_phone_number)
-
-    print("question: ", question)
-    print("user_id: ", user_id)
-    print("conversation_id: ", conversation_id)
-
     insert_message(question, "user", user_id, conversation_id)
-
     process_message = conversation_queue_logic(conversation_id)
-
-    print("process_message: ", process_message)
 
     if process_message is False:  # TODO: figure out how to handle all this
         return None, None, None
@@ -195,13 +187,10 @@ def retrieve_current_conversation_V2(question: str, sender_phone_number: str) ->
     messages = get_messages_by_conversation_id(conversation_id)
     chat_log = build_chat_log_from_conversation_history(messages, chat_log)
 
-    print("user_id: ", user_id)
-    print("conversation_id: ", conversation_id)
-    print("chat_log: ", chat_log)
     return user_id, conversation_id, chat_log
 
 
-def register_user_and_conversation(sender_phone_number: str) -> list:
+def register_user_and_conversation(sender_phone_number: str, twilio_phone_number: str) -> list:
     print("register_user_and_conversation")
     """
     Registers a user and conversation
@@ -216,7 +205,14 @@ def register_user_and_conversation(sender_phone_number: str) -> list:
     print("user_result: ", user_result)
 
     if len(user_result.data) == 0:
+        company_result = get_company_by_phone_number(twilio_phone_number)
+
+        if len(company_result.data) == 1:
+            company_id = company_result.data[0]["id"]
+            user_insert_result = insert_user(sender_phone_number, company_id)
+        
         user_insert_result = insert_user(sender_phone_number)
+        
         user_id = user_insert_result.data[0]["id"]
         conversation_insert_result = insert_conversation(user_id)
         conversation_id = conversation_insert_result.data[0]["id"]
@@ -253,8 +249,7 @@ def get_conversation_id_of_existing_user(user_id: str) -> list:
     return conversation_id
 
 
-def initiate_chat_log_and_get_context(sender_phone_number: str):
-    print("initiate_chat_log_and_get_context")
+def initiate_chat_log_and_get_context(company_phone_number: str):
     """
     Initiates the chat log and gets the context of the company
 
@@ -265,11 +260,11 @@ def initiate_chat_log_and_get_context(sender_phone_number: str):
         _type_: The chat log
     """
     chat_log = []
-    context_result = get_context_by_phone_number(sender_phone_number)
+    company_result = get_company_by_phone_number(company_phone_number)
 
-    if len(context_result.data) == 1:
+    if len(company_result.data) == 1:
         chat_log.append(
-            {"role": "system", "content": context_result.data[0]["content"]}
+            {"role": "system", "content": company_result.data[0]["content"]}
         )
     return chat_log
 
@@ -339,9 +334,6 @@ def conversation_queue_logic(conversation_id: str) -> bool:
     Returns:
         bool: True if continue to process, False if no conversation to process
     """
-
-
-
     conversation_result = get_conversation_from_queue(conversation_id)
 
     print("get_conversation_from_queue: ", conversation_result)
@@ -354,8 +346,8 @@ def conversation_queue_logic(conversation_id: str) -> bool:
         print("conversation already in queue")
         return False
 
-    print("sleeping for 10 seconds")
-    time.sleep(10)
+    print("sleeping for 5 seconds")
+    time.sleep(5)
 
     conversation_res = get_conversation_from_queue(conversation_id)
     print("get_conversation_from_queue: ", conversation_res)

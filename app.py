@@ -30,7 +30,9 @@ async def bot():
 
 
 async def async_helper(question, sender_number, twilio_number):
-    user_id, conversation_id, chat_log = retrieve_current_conversation(sender_number)
+    user_id, conversation_id, chat_log = retrieve_current_conversation(
+        sender_number, twilio_number
+    )
     chat_log.append({"role": "user", "content": question})
     answer = askgpt(question, user_id, conversation_id, chat_log)
     await send_message_twilio(answer, sender_number, twilio_number)
@@ -55,6 +57,57 @@ def devbot():
     if user_id is None and conversation_id is None and chat_log is None:
         return Response(status=204)
 
+    answer = askgpt(question, user_id, conversation_id, chat_log)
+    response = jsonify({"answer": answer})
+    response.status_code = 200
+    return response
+
+
+@app.route("/devbot2", methods=["POST"])
+def devbot2():
+    data = request.get_json()
+    question = data["question"]
+    sender_phone_number = data["phone_number"]
+    twilio_phone_number = data["twilio_phone_number"]
+
+    user_id, conversation_id = register_user_and_conversation(sender_phone_number, twilio_phone_number)
+    insert_message(question, "user", user_id, conversation_id)
+
+    conversation_result = get_conversation_from_queue(conversation_id)
+
+    if len(conversation_result.data) == 0:
+        print("insert_into_conversation_queue")
+        insert_into_conversation_queue(conversation_id)
+
+    return Response(status=204)
+
+
+@app.route("/processmessage", methods=["POST"])
+def processmessage():
+    data = request.get_json()
+    conversation_queue_entry = data["record"]
+    conversation_id = conversation_queue_entry["conversation_id"]
+    user_id = conversation_queue_entry["user_id"]
+    user_result = get_user_by_id(user_id)
+    company_id = user_result.data[0]["company_id"]
+    company_result = get_company_by_id(company_id)
+    twilio_phone_number = company_result.data[0]["phone_number"]
+
+    print("sleeping for 5 seconds")
+    time.sleep(5)
+
+    conversation_res = get_conversation_from_queue(conversation_id)
+    if len(conversation_res.data) == 0:
+        print("conversation not in queue")
+        return Response(status=204)
+
+    remove_conversation_from_queue(conversation_id)
+
+    chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
+    messages = get_messages_by_conversation_id(conversation_id)
+    chat_log = build_chat_log_from_conversation_history(messages, chat_log)
+
+    question = chat_log[-1]["content"]
     answer = askgpt(question, user_id, conversation_id, chat_log)
     response = jsonify({"answer": answer})
     response.status_code = 200

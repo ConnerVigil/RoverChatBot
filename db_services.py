@@ -32,17 +32,22 @@ def get_user_by_id(user_id: str):
     return res
 
 
-def insert_user(phone_number: str):
+def insert_user(phone_number: str, company_id: str = None):
     """
     Insert a user into the database
 
     Args:
         phone_number (str): The phone number of the user
+        company_id (str, optional): The id of the company. Defaults to None.
 
     Returns:
         _type_: The result of the query
     """
-    res = supabase.table("Users").insert({"phone_number": phone_number}).execute()
+    res = (
+        supabase.table("Users")
+        .insert({"phone_number": phone_number, "company_id": company_id})
+        .execute()
+    )
     return res
 
 
@@ -76,9 +81,23 @@ def update_user(
     return res
 
 
-def get_context_by_phone_number(phone_number: str):
+def get_company_by_id(company_id: str):
     """
-    Get a context by phone number from the database
+    Get a company by id from the database
+
+    Args:
+        company_id (str): The id of the company
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = supabase.table("Companies").select("*").eq("id", company_id).execute()
+    return res
+
+
+def get_company_by_phone_number(phone_number: str):
+    """
+    Get a company by phone number from the database
 
     Args:
         phone_number (str): The phone number of the user
@@ -87,9 +106,9 @@ def get_context_by_phone_number(phone_number: str):
         _type_: The result of the query
     """
     res = (
-        supabase.table("Contexts")
+        supabase.table("Companies")
         .select("*")
-        .eq("company_phone_number", phone_number)
+        .eq("phone_number", phone_number)
         .execute()
     )
     return res
