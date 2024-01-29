@@ -243,8 +243,7 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
 
 def insert_into_conversation_queue(conversation_id: str):
     """
-    Insert a conversation into the message queue only if
-    one does not already exist with the same conversation id
+    Insert a conversation into the conversation queue
 
     Args:
         conversation_id (str): The id of the conversation
@@ -255,8 +254,6 @@ def insert_into_conversation_queue(conversation_id: str):
     res = (
         supabase.table("Conversation_Queue")
         .insert({"conversation_id": conversation_id})
-        .on_conflict("conversation_id")
-        .do_nothing()
         .execute()
     )
     return res
@@ -264,9 +261,7 @@ def insert_into_conversation_queue(conversation_id: str):
 
 def get_conversation_from_queue(conversation_id: str):
     """
-    Checks if there is a conversation in the conversation
-    queue matching the conversation id. If there is, it
-    returns the conversation, otherwise it returns None.
+    Get a conversation from the conversation queue
 
     Args:
         conversation_id (str): The id of the conversation
