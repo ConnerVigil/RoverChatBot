@@ -44,7 +44,7 @@ def save_customers_personal_information(
         str: A string confirming that the information was saved
     """
     res = update_user(phone_number, first_name, last_name, email)
-    return json.dumps({"information saved": True})
+    return json.dumps({"result": res})
 
 
 def pass_customer_to_representative(user: object) -> str:
