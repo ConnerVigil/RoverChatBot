@@ -142,7 +142,7 @@ def retrieve_current_conversation(
     result = get_user_by_phone_number(sender_phone_number)
 
     if len(result.data) == 0:
-        user_id, conversation_id = register_user_and_conversation(sender_phone_number)
+        user_id, conversation_id = register_user_and_conversation(sender_phone_number, twilio_phone_number)
         chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
 
     elif len(result.data) == 1:
@@ -155,7 +155,7 @@ def retrieve_current_conversation(
         )
     else:
         print("ERROR - more than one user with the same phone number")
-        return []
+        return [None, None, None]
 
     return user_id, conversation_id, chat_log
 
@@ -168,30 +168,19 @@ def register_user_and_conversation(sender_phone_number: str, twilio_phone_number
         sender_phone_number (str): The phone number of the sender
 
     Returns:
-        list: A list containing the user id, conversation id, and chat log
+        list: A list containing the user id and conversation id
     """
-    user_result = get_user_by_phone_number(sender_phone_number)
+    company_result = get_company_by_phone_number(twilio_phone_number)
 
-    if len(user_result.data) == 0:
-        company_result = get_company_by_phone_number(twilio_phone_number)
-
-        if len(company_result.data) == 1:
-            company_id = company_result.data[0]["id"]
-            user_insert_result = insert_user(sender_phone_number, company_id)
-        
-        user_insert_result = insert_user(sender_phone_number)
-        
-        user_id = user_insert_result.data[0]["id"]
-        conversation_insert_result = insert_conversation(user_id)
-        conversation_id = conversation_insert_result.data[0]["id"]
-    elif len(user_result.data) == 1:
-        user_id = user_result.data[0]["id"]
-        conversation_result = get_conversation_by_user_id(user_id)
-        conversation_id = conversation_result.data[0]["id"]
+    if len(company_result.data) == 1:
+        company_id = company_result.data[0]["id"]
+        user_insert_result = insert_user(sender_phone_number, company_id)
     else:
-        print("ERROR - more than one user with the same phone number")
-        return []
-
+        user_insert_result = insert_user(sender_phone_number)
+    
+    user_id = user_insert_result.data[0]["id"]
+    conversation_insert_result = insert_conversation(user_id)
+    conversation_id = conversation_insert_result.data[0]["id"]
     return user_id, conversation_id
 
 
@@ -229,7 +218,7 @@ def initiate_chat_log_and_get_context(company_phone_number: str):
 
     if len(company_result.data) == 1:
         chat_log.append(
-            {"role": "system", "content": company_result.data[0]["content"]}
+            {"role": "system", "content": company_result.data[0]["context"]}
         )
     return chat_log
 

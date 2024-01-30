@@ -48,9 +48,10 @@ def devbot():
     data = request.get_json()
     question = data["question"]
     sender_phone_number = data["sender_phone_number"]
+    twilio_number = data["twilio_phone_number"]
 
     user_id, conversation_id, chat_log = retrieve_current_conversation(
-        sender_phone_number
+        sender_phone_number, twilio_number
     )
 
     if user_id is None and conversation_id is None and chat_log is None:
