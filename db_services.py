@@ -314,3 +314,23 @@ def remove_conversation_from_queue(conversation_id: str):
         .execute()
     )
     return res
+
+
+def insert_into_waitlist(first_name: str, last_name: str, email: str):
+    """
+    Insert a user into the waitlist
+
+    Args:
+        first_name (str): The first name of the user
+        last_name (str): The last name of the user
+        email (str): The email of the user
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Waitlist")
+        .insert({"first_name": first_name, "last_name": last_name, "email": email})
+        .execute()
+    )
+    return res
