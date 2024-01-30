@@ -32,17 +32,22 @@ def get_user_by_id(user_id: str):
     return res
 
 
-def add_user(phone_number: str):
+def insert_user(phone_number: str, company_id: str = None):
     """
     Insert a user into the database
 
     Args:
         phone_number (str): The phone number of the user
+        company_id (str, optional): The id of the company. Defaults to None.
 
     Returns:
         _type_: The result of the query
     """
-    res = supabase.table("Users").insert({"phone_number": phone_number}).execute()
+    res = (
+        supabase.table("Users")
+        .insert({"phone_number": phone_number, "company_id": company_id})
+        .execute()
+    )
     return res
 
 
@@ -76,9 +81,23 @@ def update_user(
     return res
 
 
+def get_company_by_id(company_id: str):
+    """
+    Get a company by id from the database
+
+    Args:
+        company_id (str): The id of the company
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = supabase.table("Companies").select("*").eq("id", company_id).execute()
+    return res
+
+
 def get_company_by_phone_number(phone_number: str):
     """
-    Get a context by phone number from the database
+    Get a company by phone number from the database
 
     Args:
         phone_number (str): The phone number of the user
@@ -95,7 +114,7 @@ def get_company_by_phone_number(phone_number: str):
     return res
 
 
-def add_conversation(user_id: str):
+def insert_conversation(user_id: str):
     """
     Insert a conversation into the database
 
@@ -166,7 +185,7 @@ def get_messages_by_conversation_id(conversation_id: str):
     return res
 
 
-def add_message(
+def insert_message(
     content: str,
     role: str,
     user_id: str,
@@ -229,7 +248,11 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
         .execute()
     )
 
+    if len(res.data) == 0:
+        return False
+    
     last_message = res.data[0]
+
     current_timestamp = datetime.now(timezone.utc)
     time_difference = current_timestamp - datetime.fromisoformat(
         last_message["created_at"]
@@ -241,9 +264,9 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
         return False
 
 
-def insert_into_message_queue(conversation_id: str):
+def insert_into_conversation_queue(conversation_id: str):
     """
-    Insert a conversation into the message queue
+    Insert a conversation into the conversation queue
 
     Args:
         conversation_id (str): The id of the conversation
@@ -259,9 +282,28 @@ def insert_into_message_queue(conversation_id: str):
     return res
 
 
-def remove_from_message_queue(conversation_id: str):
+def get_conversation_from_queue(conversation_id: str):
     """
-    Remove a conversation from the message queue
+    Get a conversation from the conversation queue
+
+    Args:
+        conversation_id (str): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Conversation_Queue")
+        .select("*")
+        .eq("id", conversation_id)
+        .execute()
+    )
+    return res
+
+
+def remove_conversation_from_queue(conversation_id: str):
+    """
+    Removes a conversation from the conversation queue
 
     Args:
         conversation_id (str): The id of the conversation

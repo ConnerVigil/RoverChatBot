@@ -1,10 +1,9 @@
 from flask import Flask, request, Response, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
-from chatbot import askgpt, retrieve_current_conversation
+from chatbot import *
 from twilio_services import send_message_twilio
 from flask_cors import CORS
-from db_services import insert_into_waitlist
 
 app = Flask(__name__)
 CORS(app, origins=["https://rover-landing-page.vercel.app", "http://localhost:3000"])
@@ -30,7 +29,9 @@ async def bot():
 
 
 async def async_helper(question, sender_number, twilio_number):
-    user_id, conversation_id, chat_log = retrieve_current_conversation(sender_number)
+    user_id, conversation_id, chat_log = retrieve_current_conversation(
+        sender_number, twilio_number
+    )
     chat_log.append({"role": "user", "content": question})
     answer = askgpt(question, user_id, conversation_id, chat_log)
     await send_message_twilio(answer, sender_number, twilio_number)
@@ -47,12 +48,15 @@ def devbot():
     data = request.get_json()
     question = data["question"]
     sender_phone_number = data["sender_phone_number"]
+    twilio_number = data["twilio_phone_number"]
 
     user_id, conversation_id, chat_log = retrieve_current_conversation(
-        sender_phone_number
+        sender_phone_number, twilio_number
     )
 
-    chat_log.append({"role": "user", "content": question})
+    if user_id is None and conversation_id is None and chat_log is None:
+        return Response(status=204)
+
     answer = askgpt(question, user_id, conversation_id, chat_log)
     response = jsonify({"answer": answer})
     response.status_code = 200

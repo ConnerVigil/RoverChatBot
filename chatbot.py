@@ -23,7 +23,7 @@ def askgpt(
         str: The answer from the model
     """
 
-    add_message(
+    insert_message(
         content=question, role="user", user_id=user_id, conversation_id=conversation_id
     )
 
@@ -63,7 +63,7 @@ def askgpt(
         )
 
         # insert the tool call into the db as a message
-        add_message(
+        insert_message(
             content=None,
             role="assistant",
             user_id=user_id,
@@ -100,7 +100,7 @@ def askgpt(
                     }
                 )
 
-                add_message(
+                insert_message(
                     content=function_response,
                     role="tool",
                     user_id=user_id,
@@ -117,7 +117,7 @@ def askgpt(
         answer = response.choices[0].message.content
 
     chat_log = chat_log + [{"role": "assistant", "content": answer}]
-    add_message(
+    insert_message(
         content=answer,
         role="assistant",
         user_id=user_id,
@@ -127,7 +127,9 @@ def askgpt(
     return answer
 
 
-def retrieve_current_conversation(sender_phone_number: str) -> list:
+def retrieve_current_conversation(
+    sender_phone_number: str, twilio_phone_number: str
+) -> list:
     """
     Retrieves all the information needed to continue a conversation
 
@@ -137,76 +139,140 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
     Returns:
         list: A list containing the user id, conversation id, and chat log
     """
-    # check if the phone number is registered as a user
     result = get_user_by_phone_number(sender_phone_number)
 
     if len(result.data) == 0:
-        # if not, register the phone number as a user
+        user_id, conversation_id = register_user_and_conversation(sender_phone_number, twilio_phone_number)
+        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
 
-        # insert new user into the db
-        user_insert_result = add_user(sender_phone_number)
+    elif len(result.data) == 1:
+        user_id = result.data[0]["id"]
+        conversation_id = get_conversation_id_of_existing_user(user_id)
+        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
+        messages_result = get_messages_by_conversation_id(conversation_id)
+        chat_log = build_chat_log_from_conversation_history(
+            messages_result.data, chat_log
+        )
+    else:
+        print("ERROR - more than one user with the same phone number")
+        return [None, None, None]
 
-        # then get the user id and insert a new conversation into the db
-        user_id = user_insert_result.data[0]["id"]
-        conversation_insert_result = add_conversation(user_id)
+    return user_id, conversation_id, chat_log
 
-        # then get the conversation id
+
+def register_user_and_conversation(sender_phone_number: str, twilio_phone_number: str) -> list:
+    """
+    Registers a user and conversation
+
+    Args:
+        sender_phone_number (str): The phone number of the sender
+
+    Returns:
+        list: A list containing the user id and conversation id
+    """
+    company_result = get_company_by_phone_number(twilio_phone_number)
+
+    if len(company_result.data) == 1:
+        company_id = company_result.data[0]["id"]
+        user_insert_result = insert_user(sender_phone_number, company_id)
+    else:
+        user_insert_result = insert_user(sender_phone_number)
+    
+    user_id = user_insert_result.data[0]["id"]
+    conversation_insert_result = insert_conversation(user_id)
+    conversation_id = conversation_insert_result.data[0]["id"]
+    return user_id, conversation_id
+
+
+def get_conversation_id_of_existing_user(user_id: str) -> list:
+    """Get the conversation id of an existing user, checking if the conversation is active
+
+    Args:
+        user_id (str): The id of the user
+
+    Returns:
+        list: The conversation id
+    """
+    conversation_result = get_conversation_by_user_id(user_id)
+    conversation_id = conversation_result.data[0]["id"]
+
+    if not check_if_conversation_is_active(conversation_id):
+        conversation_insert_result = insert_conversation(user_id)
         conversation_id = conversation_insert_result.data[0]["id"]
 
-        # then get the context and put it into the chat log
-        company_result = get_company_by_phone_number(sender_phone_number)
-        chat_log = []
-        if len(company_result.data) == 1:
-            chat_log.append(
-                {"role": "system", "content": company_result.data[0]["context"]}
-            )
-    elif len(result.data) == 1:
-        # if yes, check if there is an active conversation
+    return conversation_id
 
-        # get the user id and get the most recent conversation id
+
+def initiate_chat_log_and_get_context(company_phone_number: str):
+    """
+    Initiates the chat log and gets the context of the company
+
+    Args:
+        sender_phone_number (str): The phone number of the sender
+
+    Returns:
+        _type_: The chat log
+    """
+    chat_log = []
+    company_result = get_company_by_phone_number(company_phone_number)
+
+    if len(company_result.data) == 1:
+        chat_log.append(
+            {"role": "system", "content": company_result.data[0]["context"]}
+        )
+    return chat_log
+
+
+def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> str:
+    """
+    Builds a chat log from the conversation history
+
+    Args:
+        messages (list): The conversation history
+
+    Returns:
+        str: The finished chat log
+    """
+    for message in messages:
+        new_message = {
+            "role": message["role"],
+            "content": message["content"],
+        }
+
+        if message["tool_calls"] != []:
+            new_message["tool_calls"] = message["tool_calls"]
+
+        if message["tool_call_id"] != None:
+            new_message["tool_call_id"] = message["tool_call_id"]
+
+        if message["function_name"] != None:
+            new_message["name"] = message["function_name"]
+
+        chat_log.append(new_message)
+
+    return chat_log
+
+
+def get_conversation_id_by_phone_number(sender_phone_number: str) -> str:
+    """
+    Gets the conversation id by the phone number
+
+    Args:
+        sender_phone_number (str): The phone number of the sender
+
+    Returns:
+        str: The conversation id, or None if there is no conversation
+    """
+    result = get_user_by_phone_number(sender_phone_number)
+
+    if len(result.data) == 1:
         user_id = result.data[0]["id"]
         conversation_result = get_conversation_by_user_id(user_id)
         conversation_id = conversation_result.data[0]["id"]
-
-        if not check_if_conversation_is_active(conversation_id):
-            # if not, insert a new conversation into the db
-            conversation_insert_result = add_conversation(user_id)
-            conversation_id = conversation_insert_result.data[0]["id"]
-
-        # get the context first and put it into the chat log
-        chat_log = []
-        company_result = get_company_by_phone_number(sender_phone_number)
-
-        if len(company_result.data) == 1:
-            chat_log.append(
-                {"role": "system", "content": company_result.data[0]["context"]}
-            )
-
-        # then grab all the messages from that conversation and put them into chat_log
-        message_result = get_messages_by_conversation_id(conversation_id)
-
-        for message in message_result.data:
-            new_message = {
-                "role": message["role"],
-                "content": message["content"],
-            }
-
-            if message["tool_calls"] != []:
-                new_message["tool_calls"] = message["tool_calls"]
-
-            if message["tool_call_id"] != None:
-                new_message["tool_call_id"] = message["tool_call_id"]
-
-            if message["function_name"] != None:
-                new_message["name"] = message["function_name"]
-
-            chat_log.append(new_message)
-
+        return conversation_id
     else:
-        print("ERROR - more than one user with the same phone number")
-        return []
-
-    return user_id, conversation_id, chat_log
+        print(f"ERROR - no user with the phone number: {sender_phone_number}")
+        return None
 
 
 def print_chat_log_without_context(chat_log: list):
