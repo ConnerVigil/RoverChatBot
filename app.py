@@ -4,6 +4,23 @@ from twilio.twiml.voice_response import VoiceResponse
 from chatbot import *
 from twilio_services import send_message_twilio
 from flask_cors import CORS
+import sentry_sdk
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+sentry_sdk.init(
+    environment=os.getenv("SENTRY_ENVIRONMENT"),
+    dsn=os.getenv("SENTRY_DSN"),
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
 
 app = Flask(__name__)
 CORS(app, origins=["https://rover-landing-page.vercel.app", "http://localhost:3000"])
@@ -21,11 +38,16 @@ async def bot():
     Returns:
         _type_: A response object
     """
-    incoming_msg = request.values["Body"]
-    sender_number = request.values["From"]
-    twilio_number = request.values["To"]
-    await async_helper(incoming_msg, sender_number, twilio_number)
-    return Response(status=204)
+    try:
+        incoming_msg = request.values["Body"]
+        sender_number = request.values["From"]
+        twilio_number = request.values["To"]
+        await async_helper(incoming_msg, sender_number, twilio_number)
+        return Response(status=204)
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print(f"Unexpected error: {e}")
+        return jsonify(error="Internal Server Error"), 500
 
 
 async def async_helper(question, sender_number, twilio_number):
@@ -45,83 +67,89 @@ def devbot():
     Returns:
         _type_: A response object
     """
-    data = request.get_json()
-    question = data["question"]
-    sender_phone_number = data["sender_phone_number"]
-    twilio_number = data["twilio_phone_number"]
+    try:
+        data = request.get_json()
+        question = data["question"]
+        sender_phone_number = data["sender_phone_number"]
+        twilio_number = data["twilio_phone_number"]
 
-    user_id, conversation_id, chat_log = retrieve_current_conversation(
-        sender_phone_number, twilio_number
-    )
+        user_id, conversation_id, chat_log = retrieve_current_conversation(
+            sender_phone_number, twilio_number
+        )
 
-    if user_id is None and conversation_id is None and chat_log is None:
-        return Response(status=204)
+        if user_id is None and conversation_id is None and chat_log is None:
+            return Response(status=204)
 
-    answer = askgpt(question, user_id, conversation_id, chat_log)
-    response = jsonify({"answer": answer})
-    response.status_code = 200
-    return response
+        chat_log.append({"role": "user", "content": question})
+        answer = askgpt(question, user_id, conversation_id, chat_log)
+        response = jsonify({"answer": answer})
+        response.status_code = 200
+        return response
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print(f"Unexpected error: {e}")
+        return jsonify(error="Internal Server Error"), 500
 
 
 @app.route("/backup", methods=["GET"])
 def backup():
     """
-    An endpoint for webhooks when the bot has an error
+    An endpoint for webhooks when the bot has an error for Twilio
 
     Returns:
         _type_: A response object
     """
-    response = MessagingResponse()
-    response.message("Sorry, there was an error on our end 😢")
-    return str(response)
+    try:
+        response = MessagingResponse()
+        response.message("Sorry, there was an error on our end 😢")
+        return str(response)
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print(f"Unexpected error: {e}")
+        return jsonify(error="Internal Server Error"), 500
 
 
 @app.route("/greeting", methods=["GET"])
 async def greeting():
     """
-    An endpoint for a webhooks to hit when there is a missed call,
-    thus initiating the conversation
+    An endpoint for a webhooks to hit when there is a missed call
+    to the Twilio number, thus initiating the conversation
 
     Returns:
         _type_: A response object
     """
-    sender_number = request.values["From"]
-    twilio_number = request.values["To"]
-    await send_message_twilio(
-        "Hello, sorry we missed your call. How can I help you?",
-        sender_number,
-        twilio_number,
-    )
-    response = VoiceResponse()
-    response.hangup()
-    return str(response)
+    try:
+        sender_number = request.values["From"]
+        twilio_number = request.values["To"]
+        await send_message_twilio(
+            "Hello, sorry we missed your call. How can I help you?",
+            sender_number,
+            twilio_number,
+        )
+        response = VoiceResponse()
+        response.hangup()
+        return str(response)
+    except Exception as e:
+        sentry_sdk.capture_exception(e)
+        print(f"Unexpected error: {e}")
+        return jsonify(error="Internal Server Error"), 500
 
 
 @app.route("/missedCall", methods=["POST"])
-async def test():
-    # await send_message_twilio(
-    #     f"Content-Length: {request.content_length}", CONNER_NUMBER, TWILIO_NUMBER
-    # )
-    # insert into supabase missed call
+def test():
+    """An endpoint for the RingCentral webhook to hit when there is a missed call
+
+    Returns:
+        _type_: A response object
+    """
     try:
         validation_token = request.headers.get("Validation-Token")
-
-        if "application/json" not in request.content_type:
-            raise ValueError(
-                f"Invalid Content-Type: {request.content_type}. Expected application/json."
-            )
-
-        # json_data = request.get_json()
-        # if json_data is None:
-        #     raise ValueError("Invalid JSON data or missing Content-Type header")
-
-        # print(f"Received JSON data: {json_data}")
+        json_data = request.get_json()
+        print(f"Received JSON data: {json_data}")
 
         return Response(status=200, headers={"Validation-Token": validation_token})
-    except ValueError as ve:
-        print(f"Error processing JSON data: {ve}")
-        return jsonify(error="Bad Request"), 400
     except Exception as e:
+        sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
         return jsonify(error="Internal Server Error"), 500
 
@@ -148,6 +176,7 @@ def waitlist():
             return Response(status=500)
     except Exception as e:
         print("Error:", str(e))
+        sentry_sdk.capture_exception(e)
         return Response(status=500, response="An unexpected error occurred")
 
 
