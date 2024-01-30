@@ -1,7 +1,4 @@
 import json
-import time
-
-from flask import jsonify
 from termcolor import colored
 from openai_functions import tools, available_functions
 from db_services import *
@@ -163,35 +160,7 @@ def retrieve_current_conversation(
     return user_id, conversation_id, chat_log
 
 
-def retrieve_current_conversation_V2(question: str, sender_phone_number: str) -> list:
-    print("retrieve_current_conversation_V2")
-    """
-    Retrieves all the information needed to continue a conversation, while using
-    conversation queue logic.
-
-    Args:
-        question (str): The question asked by the user
-        sender_phone_number (str): The phone number of the sender
-
-    Returns:
-        list: The user id, conversation id, and chat lot
-    """
-    user_id, conversation_id = register_user_and_conversation(sender_phone_number)
-    insert_message(question, "user", user_id, conversation_id)
-    process_message = conversation_queue_logic(conversation_id)
-
-    if process_message is False:  # TODO: figure out how to handle all this
-        return None, None, None
-
-    chat_log = initiate_chat_log_and_get_context(sender_phone_number)
-    messages = get_messages_by_conversation_id(conversation_id)
-    chat_log = build_chat_log_from_conversation_history(messages, chat_log)
-
-    return user_id, conversation_id, chat_log
-
-
 def register_user_and_conversation(sender_phone_number: str, twilio_phone_number: str) -> list:
-    print("register_user_and_conversation")
     """
     Registers a user and conversation
 
@@ -202,7 +171,6 @@ def register_user_and_conversation(sender_phone_number: str, twilio_phone_number
         list: A list containing the user id, conversation id, and chat log
     """
     user_result = get_user_by_phone_number(sender_phone_number)
-    print("user_result: ", user_result)
 
     if len(user_result.data) == 0:
         company_result = get_company_by_phone_number(twilio_phone_number)
@@ -224,13 +192,10 @@ def register_user_and_conversation(sender_phone_number: str, twilio_phone_number
         print("ERROR - more than one user with the same phone number")
         return []
 
-    print("returning user_id: ", user_id)
-    print("returning conversation_id: ", conversation_id)
     return user_id, conversation_id
 
 
 def get_conversation_id_of_existing_user(user_id: str) -> list:
-    print("get_conversation_id_of_existing_user")
     """Get the conversation id of an existing user, checking if the conversation is active
 
     Args:
@@ -270,7 +235,6 @@ def initiate_chat_log_and_get_context(company_phone_number: str):
 
 
 def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> str:
-    print("build_chat_log_from_conversation_history")
     """
     Builds a chat log from the conversation history
 
@@ -301,7 +265,6 @@ def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> 
 
 
 def get_conversation_id_by_phone_number(sender_phone_number: str) -> str:
-    print("get_conversation_id_by_phone_number")
     """
     Gets the conversation id by the phone number
 
@@ -321,42 +284,6 @@ def get_conversation_id_by_phone_number(sender_phone_number: str) -> str:
     else:
         print(f"ERROR - no user with the phone number: {sender_phone_number}")
         return None
-
-
-def conversation_queue_logic(conversation_id: str) -> bool:
-    print("conversation_queue_logic")
-    """
-    Performs the logic tied to the conversation queue
-
-    Args:
-        conversation_id (str): The conversation id
-
-    Returns:
-        bool: True if continue to process, False if no conversation to process
-    """
-    conversation_result = get_conversation_from_queue(conversation_id)
-
-    print("get_conversation_from_queue: ", conversation_result)
-
-    if len(conversation_result.data) == 0:
-        print("conversation not in queue")
-        print("insert_into_conversation_queue")
-        insert_into_conversation_queue(conversation_id)
-    else:
-        print("conversation already in queue")
-        return False
-
-    print("sleeping for 5 seconds")
-    time.sleep(5)
-
-    conversation_res = get_conversation_from_queue(conversation_id)
-    print("get_conversation_from_queue: ", conversation_res)
-    if len(conversation_res.data) == 0:
-        return False
-
-    print("remove_conversation_from_queue")
-    remove_conversation_from_queue(conversation_id)
-    return True
 
 
 def print_chat_log_without_context(chat_log: list):
