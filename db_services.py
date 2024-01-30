@@ -76,7 +76,7 @@ def update_user(
     return res
 
 
-def get_context_by_phone_number(phone_number: str):
+def get_company_by_phone_number(phone_number: str):
     """
     Get a context by phone number from the database
 
@@ -87,9 +87,9 @@ def get_context_by_phone_number(phone_number: str):
         _type_: The result of the query
     """
     res = (
-        supabase.table("Contexts")
+        supabase.table("Companies")
         .select("*")
-        .eq("company_phone_number", phone_number)
+        .eq("phone_number", phone_number)
         .execute()
     )
     return res
@@ -120,10 +120,7 @@ def get_conversation_by_id(conversation_id: str):
         _type_: The result of the query
     """
     res = (
-        supabase.table("Conversations")
-        .select("*")
-        .eq("id", conversation_id)
-        .execute()
+        supabase.table("Conversations").select("*").eq("id", conversation_id).execute()
     )
     return res
 
@@ -299,4 +296,3 @@ def insert_into_waitlist(first_name: str, last_name: str, email: str):
         .execute()
     )
     return res
-

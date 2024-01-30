@@ -154,11 +154,11 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
         conversation_id = conversation_insert_result.data[0]["id"]
 
         # then get the context and put it into the chat log
-        context_result = get_context_by_phone_number(sender_phone_number)
+        company_result = get_company_by_phone_number(sender_phone_number)
         chat_log = []
-        if len(context_result.data) == 1:
+        if len(company_result.data) == 1:
             chat_log.append(
-                {"role": "system", "content": context_result.data[0]["content"]}
+                {"role": "system", "content": company_result.data[0]["context"]}
             )
     elif len(result.data) == 1:
         # if yes, check if there is an active conversation
@@ -175,11 +175,11 @@ def retrieve_current_conversation(sender_phone_number: str) -> list:
 
         # get the context first and put it into the chat log
         chat_log = []
-        context_result = get_context_by_phone_number(sender_phone_number)
+        company_result = get_company_by_phone_number(sender_phone_number)
 
-        if len(context_result.data) == 1:
+        if len(company_result.data) == 1:
             chat_log.append(
-                {"role": "system", "content": context_result.data[0]["content"]}
+                {"role": "system", "content": company_result.data[0]["context"]}
             )
 
         # then grab all the messages from that conversation and put them into chat_log

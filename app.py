@@ -7,7 +7,7 @@ from flask_cors import CORS
 from db_services import insert_into_waitlist
 
 app = Flask(__name__)
-CORS(app, origins='https://rover-landing-page.vercel.app')
+CORS(app, origins=["https://rover-landing-page.vercel.app", "http://localhost:3000"])
 
 TWILIO_NUMBER = "+13134258270"
 CONNER_NUMBER = "+18013896501"
@@ -46,44 +46,7 @@ def devbot():
     """
     data = request.get_json()
     question = data["question"]
-    sender_phone_number = data["phone_number"]
-
-
-
-    # # --------------------------------------------------------------------------
-    # # Get conversation id
-    # conversation_id = get_conversation_id_by_phone_number(sender_phone_number)
-
-    # # Insert into message_queue (can’t have duplicates in db)
-    # insert_into_message_queue(conversation_id)
-
-    # # Wait 10 seconds
-    # time.sleep(10)
-
-    # # Check if there is a conversation in the conversation_queue
-    # conversation_res = get_conversation_from_queue(conversation_id)
-
-    # # If there is no entry in the queue, end function
-    # if len(conversation_res.data) == 0:
-    #     return
-    
-    # # Remove the entry in the conversation queue
-    # remove_conversation_from_queue(conversation_id)
-
-    # # Get chat log
-    # chat_log = get_chat_log_by_conversation_id(conversation_id)
-
-    # # Get user id
-    # res = get_user_by_phone_number(sender_phone_number)
-    # user_id = res.data[0]["id"]
-
-    # # Process question with chatgpt
-    # answer = askgpt(question, user_id, conversation_id, chat_log)
-    # # --------------------------------------------------------------------------
-
-
-
-    
+    sender_phone_number = data["sender_phone_number"]
 
     user_id, conversation_id, chat_log = retrieve_current_conversation(
         sender_phone_number
@@ -157,9 +120,9 @@ async def test():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return jsonify(error="Internal Server Error"), 500
-    
 
-@app.route('/waitlist', methods=['POST'])
+
+@app.route("/waitlist", methods=["POST"])
 def waitlist():
     """
     An endpoint for signing up for the waitlist
@@ -169,9 +132,9 @@ def waitlist():
     """
     try:
         data = request.json
-        first_name = data.get('firstName', None)
-        last_name = data.get('lastName', None)
-        email = data.get('email', None)
+        first_name = data.get("firstName", None)
+        last_name = data.get("lastName", None)
+        email = data.get("email", None)
         res = insert_into_waitlist(first_name, last_name, email)
 
         if res.data[0]:
