@@ -112,7 +112,3 @@ grant trigger on table "public"."Companies" to "service_role";
 grant truncate on table "public"."Companies" to "service_role";
 
 grant update on table "public"."Companies" to "service_role";
-
-CREATE TRIGGER testwebhook AFTER INSERT ON public."Conversation_Queue" FOR EACH ROW EXECUTE FUNCTION supabase_functions.http_request('https://doe-up-muskox.ngrok-free.app/testwebhook', 'POST', '{"Content-type":"application/json"}', '{}', '1000');
-
-
