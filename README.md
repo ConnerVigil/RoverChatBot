@@ -6,33 +6,31 @@
 2. Make an account on OpenAI to get an API key
 3. Get added to Supabase Team Org. You will need URL and Key
 
-
 ## How to create Python instance on MacOS
 
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors ringcentral
+pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors ringcentral 'sentry-sdk[flask]'
 ```
 
-
 ## How to create Python instance on Windows
+
 ```
 python -m venv venv
 venv/scripts/Activate.ps1   # if using Powershell in terminal
 pip install openai twilio 'flask[async]' python-dotenv pyngrok black termcolor supabase flask-cors flask ringcentral
 ```
 
-
-
 ## How to start server
 
 ```
-flask run --port 8000 --debug 
+flask run --port 8000 --debug
 ```
 
-
 ## How to use Ngrok for testing
+
+(you will probably need to go make your own account https://ngrok.com/ and set it up)
 
 ```
 ngrok http --domain=doe-up-muskox.ngrok-free.app 8000
@@ -100,31 +98,3 @@ psql 'postgresql://postgres:postgres@localhost:54322/postgres'
 ```
 black .
 ```
-
-## Linux Services
-
-```
-#Reload the service files to include the new service.
-sudo systemctl daemon-reload
-
-
-#Start your service
-sudo systemctl start your-service.service
-
-#To check the status of your service
-sudo systemctl status example.service
-
-#To enable your service on every reboot
-sudo systemctl enable example.service
-
-#To disable your service on every reboot
-sudo systemctl disable example.service
-```
-
-## NGINX
-
-```
-sudo systemctl restart nginx
-```
-
-## GUNICORN
