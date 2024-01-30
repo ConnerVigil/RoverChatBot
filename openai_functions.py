@@ -47,6 +47,19 @@ def save_customers_personal_information(
     return json.dumps({"information saved": True})
 
 
+def pass_customer_to_representative(user: object) -> str:
+    """Passes the customer to a representative
+
+    Args:
+        user (object): The user object
+
+    Returns:
+        str: A string confirming that the customer was passed to a representative
+    """
+    res = insert_user(user)
+    return json.dumps({"customer passed to representative": True}
+
+
 tools = [
     {
         "type": "function",
