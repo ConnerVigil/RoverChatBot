@@ -7,10 +7,10 @@ from db_services import *
 from openai_services import *
 
 CHATGPT_MODEL = "gpt-3.5-turbo-1106"
-RESPONSE_SLEEP_TIME = 10
+RESPONSE_SLEEP_TIME = 5
 
 
-def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> str:
+async def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> str:
     """
     The main logic of the bot
 
