@@ -250,7 +250,7 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
 
     if len(res.data) == 0:
         return False
-    
+
     last_message = res.data[0]
 
     current_timestamp = datetime.now(timezone.utc)
