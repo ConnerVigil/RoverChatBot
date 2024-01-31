@@ -71,9 +71,7 @@ def devbot():
         question = data["question"]
         sender_phone_number = data["sender_phone_number"]
         twilio_number = data["twilio_phone_number"]
-
         answer = bot_logic(question, sender_phone_number, twilio_number)
-
         response = jsonify({"answer": answer})
         response.status_code = 200
         return response
