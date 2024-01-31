@@ -54,7 +54,7 @@ async def bot():
 
 
 async def async_helper(question, sender_number, twilio_number):
-    answer = bot_logic(question, sender_number, twilio_number)
+    answer = await bot_logic(question, sender_number, twilio_number)
     await send_message_twilio(answer, sender_number, twilio_number)
 
 
