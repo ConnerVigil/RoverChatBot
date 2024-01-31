@@ -2,6 +2,7 @@ from flask import Flask, request, Response, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
 from chatbot import *
+from exceptions import NewMessagesReceived
 from twilio_services import send_message_twilio
 from flask_cors import CORS
 import sentry_sdk
@@ -44,6 +45,8 @@ async def bot():
         twilio_number = request.values["To"]
         await async_helper(incoming_msg, sender_number, twilio_number)
         return Response(status=204)
+    except NewMessagesReceived as e:
+        return Response(status=204)
     except Exception as e:
         sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
@@ -51,11 +54,7 @@ async def bot():
 
 
 async def async_helper(question, sender_number, twilio_number):
-    user_id, conversation_id, chat_log = retrieve_current_conversation(
-        sender_number, twilio_number
-    )
-    chat_log.append({"role": "user", "content": question})
-    answer = askgpt(question, user_id, conversation_id, chat_log)
+    answer = bot_logic(question, sender_number, twilio_number)
     await send_message_twilio(answer, sender_number, twilio_number)
 
 
@@ -73,18 +72,13 @@ def devbot():
         sender_phone_number = data["sender_phone_number"]
         twilio_number = data["twilio_phone_number"]
 
-        user_id, conversation_id, chat_log = retrieve_current_conversation(
-            sender_phone_number, twilio_number
-        )
+        answer = bot_logic(question, sender_phone_number, twilio_number)
 
-        if user_id is None and conversation_id is None and chat_log is None:
-            return Response(status=204)
-
-        chat_log.append({"role": "user", "content": question})
-        answer = askgpt(question, user_id, conversation_id, chat_log)
         response = jsonify({"answer": answer})
         response.status_code = 200
         return response
+    except NewMessagesReceived as e:
+        return Response(status=204)
     except Exception as e:
         sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
@@ -186,4 +180,4 @@ def waitlist():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()  # debug=True
