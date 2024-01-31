@@ -44,31 +44,35 @@ def save_customers_personal_information(
         str: A string confirming that the information was saved
     """
     res = update_user(phone_number, first_name, last_name, email)
-    return json.dumps({"result": res})
+    return json.dumps({"result": "Customer information saved"})
+
+
+def pass_customer_to_representative(user: object) -> str:
+    pass
 
 
 tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "book_appointment",
-            "description": "Book an appointment for the customer",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "date": {
-                        "type": "string",
-                        "description": "The date of the appointment",
-                    },
-                    "time": {
-                        "type": "string",
-                        "description": "The time of the appointment",
-                    },
-                },
-                "required": ["date", "time"],
-            },
-        },
-    },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "book_appointment",
+    #         "description": "Book an appointment for the customer",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "date": {
+    #                     "type": "string",
+    #                     "description": "The date of the appointment",
+    #                 },
+    #                 "time": {
+    #                     "type": "string",
+    #                     "description": "The time of the appointment",
+    #                 },
+    #             },
+    #             "required": ["date", "time"],
+    #         },
+    #     },
+    # },
     {
         "type": "function",
         "function": {
@@ -109,10 +113,10 @@ tools = [
 ]
 
 available_functions = {
-    "book_appointment": {
-        "function": book_appointment,
-        "parameters": ["date", "time"],
-    },
+    # "book_appointment": {
+    #     "function": book_appointment,
+    #     "parameters": ["date", "time"],
+    # },
     "get_current_date_and_time": {
         "function": get_current_date_and_time,
         "parameters": [],
