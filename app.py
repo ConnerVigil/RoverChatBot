@@ -51,10 +51,10 @@ async def bot():
         sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
         return jsonify(error="Internal Server Error"), 500
-
+    
 
 async def async_helper(question, sender_number, twilio_number):
-    answer = await bot_logic(question, sender_number, twilio_number)
+    answer = bot_logic(question, sender_number, twilio_number)
     await send_message_twilio(answer, sender_number, twilio_number)
 
 
