@@ -1,7 +1,9 @@
 from clients import openAI_client
+from termcolor import colored
+from clients import environment
 
 
-def create_gpt_response(model, messages, tools=None, tool_choice=None):
+def create_gpt_response(model, messages, tools=None, tool_choice="none"):
     """
     Uses the Open AI client to make a response with the conversation so far and other parameters.
 
@@ -14,11 +16,14 @@ def create_gpt_response(model, messages, tools=None, tool_choice=None):
     Returns:
         _type_: _description_
     """
-    if tools is None and tool_choice is None:
-        return openAI_client.chat.completions.create(model=model, messages=messages)
-    return openAI_client.chat.completions.create(
+    response = openAI_client.chat.completions.create(
         model=model,
         messages=messages,
         tools=tools,
         tool_choice=tool_choice,
     )
+
+    if environment == "development":
+        print(colored(f"Token count for current conversation: {response.usage.total_tokens}", "green"))
+
+    return response

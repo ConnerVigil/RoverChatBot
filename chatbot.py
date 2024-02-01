@@ -5,6 +5,7 @@ from termcolor import colored
 from openai_functions import tools, available_functions
 from db_services import *
 from openai_services import *
+from clients import environment
 
 CHATGPT_MODEL = "gpt-3.5-turbo-1106"
 RESPONSE_SLEEP_TIME = 5
@@ -40,8 +41,12 @@ def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> st
         raise NewMessagesReceived("Need to respond to more messages")
 
     chat_log = filter_out_id_from_chat_log(chat_log)
-    chat_log.append({"role": "user", "content": question})
     answer = askgpt(user_id, conversation_id, chat_log)
+    chat_log.append({"role": "assistant", "content": answer})
+
+    if environment == "development":
+        print_chat_log_without_context(chat_log)
+
     return answer
 
 
@@ -347,19 +352,6 @@ def print_chat_log_without_context(chat_log: list):
     Args:
         chat_log (list): The chat log to print
     """
-    temp_log = chat_log.copy()
-    temp_log[0] = {}
-    for message in temp_log:
-        print(message)
-
-
-def pretty_print_conversation(messages):
-    """
-    Prints the conversation in a pretty format for debugging purposes
-
-    Args:
-        messages (_type_): The messages to print
-    """
     role_to_color = {
         "system": "red",
         "user": "green",
@@ -367,35 +359,9 @@ def pretty_print_conversation(messages):
         "tool": "magenta",
     }
 
-    for message in messages:
+    for message in chat_log:
         if message["role"] == "system":
-            # print(
-            #     colored(
-            #         f"system: {message['content']}\n", role_to_color[message["role"]]
-            #     )
-            # )
+            print(colored("context", role_to_color["system"]))
             continue
-        elif message["role"] == "user":
-            print(
-                colored(f"user: {message['content']}\n", role_to_color[message["role"]])
-            )
-        elif message["role"] == "assistant" and message.get("function_call"):
-            print(
-                colored(
-                    f"assistant: {message['function_call']}\n",
-                    role_to_color[message["role"]],
-                )
-            )
-        elif message["role"] == "assistant" and not message.get("function_call"):
-            print(
-                colored(
-                    f"assistant: {message['content']}\n", role_to_color[message["role"]]
-                )
-            )
-        elif message["role"] == "tool":
-            print(
-                colored(
-                    f"function ({message['name']}): {message['content']}\n",
-                    role_to_color[message["role"]],
-                )
-            )
+        print(colored(message, role_to_color[message["role"]]))
+

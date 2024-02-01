@@ -51,7 +51,7 @@ async def bot():
         sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
         return jsonify(error="Internal Server Error"), 500
-    
+
 
 async def async_helper(question, sender_number, twilio_number):
     answer = bot_logic(question, sender_number, twilio_number)
@@ -139,8 +139,7 @@ def missedCall():
     """
     try:
         validation_token = request.headers.get("Validation-Token")
-        json_data = request.get_json()
-        print(f"Received JSON data: {json_data}")
+        print(f"Received validation token: {validation_token}")
 
         # TODO: Function for handling missed call logic
 
