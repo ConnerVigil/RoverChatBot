@@ -146,7 +146,9 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
                 )
 
         # get a new response from the model where it can see the function response
-        second_response = create_gpt_response(model=CHATGPT_MODEL, messages=chat_log)
+        second_response = create_gpt_response(
+            model=CHATGPT_MODEL, messages=chat_log, tools=[], tool_choice="none"
+        )
         answer = second_response.choices[0].message.content
 
     else:
@@ -364,4 +366,3 @@ def print_chat_log_without_context(chat_log: list):
             print(colored("context", role_to_color["system"]))
             continue
         print(colored(message, role_to_color[message["role"]]))
-
