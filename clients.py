@@ -13,3 +13,5 @@ openAI_client = OpenAI(
 twilio_client = Client(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
 
 supabase = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+
+environment = os.getenv("SENTRY_ENVIRONMENT")

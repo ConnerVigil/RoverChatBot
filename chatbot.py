@@ -1,31 +1,67 @@
 import json
+import time
+from exceptions import NewMessagesReceived
 from termcolor import colored
 from openai_functions import tools, available_functions
 from db_services import *
 from openai_services import *
+from clients import environment
 
 CHATGPT_MODEL = "gpt-3.5-turbo-1106"
+RESPONSE_SLEEP_TIME = 5
 
 
-def askgpt(
-    question: str, user_id: str, conversation_id: str, chat_log: list = None
-) -> str:
+def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> str:
+    """
+    The main logic of the bot
+
+    Args:
+        question (str): The question to ask the bot
+        sender_phone_number (str): The phone number of the sender
+        twilio_number (str): The phone number of the company
+
+    Raises:
+        NewMessagesReceived: Need to respond to more messages
+
+    Returns:
+        str: The answer from the bot
+    """
+    user_id, conversation_id = retrieve_current_conversation(
+        sender_phone_number, twilio_number
+    )
+
+    message_insert_result = insert_message(
+        content=question, role="user", user_id=user_id, conversation_id=conversation_id
+    )
+
+    time.sleep(RESPONSE_SLEEP_TIME)
+    chat_log = get_chat_log(conversation_id, twilio_number)
+
+    if chat_log[-1]["id"] != message_insert_result.data[0]["id"]:
+        raise NewMessagesReceived("Need to respond to more messages")
+
+    chat_log = filter_out_id_from_chat_log(chat_log)
+    answer = askgpt(user_id, conversation_id, chat_log)
+    chat_log.append({"role": "assistant", "content": answer})
+
+    if environment == "development":
+        print_chat_log_without_context(chat_log)
+
+    return answer
+
+
+def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
     """
     Ask the GPT-3 model a question
 
     Args:
-        question (str): The question to ask the model
         user_id (str): The id of the user
         conversation_id (str): The id of the conversation
-        chat_log (list, optional): The history of the conversation. Defaults to None.
+        chat_log (list, optional): The history of the conversation
 
     Returns:
         str: The answer from the model
     """
-
-    insert_message(
-        content=question, role="user", user_id=user_id, conversation_id=conversation_id
-    )
 
     response = create_gpt_response(
         model=CHATGPT_MODEL,
@@ -110,7 +146,9 @@ def askgpt(
                 )
 
         # get a new response from the model where it can see the function response
-        second_response = create_gpt_response(model=CHATGPT_MODEL, messages=chat_log)
+        second_response = create_gpt_response(
+            model=CHATGPT_MODEL, messages=chat_log, tool_choice="none"
+        )
         answer = second_response.choices[0].message.content
 
     else:
@@ -131,41 +169,59 @@ def retrieve_current_conversation(
     sender_phone_number: str, twilio_phone_number: str
 ) -> list:
     """
-    Retrieves all the information needed to continue a conversation
+    Retrieves the current conversation
 
     Args:
         sender_phone_number (str): The phone number of the sender
+        twilio_phone_number (str): The phone number of the company
+
+    Raises:
+        Exception: More than one user with the same phone number
 
     Returns:
-        list: A list containing the user id, conversation id, and chat log
+        list: A list containing the user id and conversation id
     """
     result = get_user_by_phone_number(sender_phone_number)
 
     if len(result.data) == 0:
-        user_id, conversation_id = register_user_and_conversation(sender_phone_number, twilio_phone_number)
-        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
-
+        user_id, conversation_id = register_user_and_conversation(
+            sender_phone_number, twilio_phone_number
+        )
     elif len(result.data) == 1:
         user_id = result.data[0]["id"]
         conversation_id = get_conversation_id_of_existing_user(user_id)
-        chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
-        messages_result = get_messages_by_conversation_id(conversation_id)
-        chat_log = build_chat_log_from_conversation_history(
-            messages_result.data, chat_log
-        )
     else:
-        print("ERROR - more than one user with the same phone number")
-        return [None, None, None]
+        raise Exception("More than one user with the same phone number")
 
-    return user_id, conversation_id, chat_log
+    return user_id, conversation_id
 
 
-def register_user_and_conversation(sender_phone_number: str, twilio_phone_number: str) -> list:
+def get_chat_log(conversation_id: str, twilio_phone_number: str) -> list:
+    """
+    Gets the chat log from the conversation
+
+    Args:
+        conversation_id (str): The id of the conversation
+        twilio_phone_number (str): The phone number of the company
+
+    Returns:
+        list: The chat log
+    """
+    chat_log = initiate_chat_log_and_get_context(twilio_phone_number)
+    messages_result = get_messages_by_conversation_id(conversation_id)
+    chat_log = build_chat_log_from_conversation_history(messages_result.data, chat_log)
+    return chat_log
+
+
+def register_user_and_conversation(
+    sender_phone_number: str, twilio_phone_number: str
+) -> list:
     """
     Registers a user and conversation
 
     Args:
         sender_phone_number (str): The phone number of the sender
+        twilio_phone_number (str): The phone number of the company
 
     Returns:
         list: A list containing the user id and conversation id
@@ -177,7 +233,7 @@ def register_user_and_conversation(sender_phone_number: str, twilio_phone_number
         user_insert_result = insert_user(sender_phone_number, company_id)
     else:
         user_insert_result = insert_user(sender_phone_number)
-    
+
     user_id = user_insert_result.data[0]["id"]
     conversation_insert_result = insert_conversation(user_id)
     conversation_id = conversation_insert_result.data[0]["id"]
@@ -203,7 +259,7 @@ def get_conversation_id_of_existing_user(user_id: str) -> list:
     return conversation_id
 
 
-def initiate_chat_log_and_get_context(company_phone_number: str):
+def initiate_chat_log_and_get_context(company_phone_number: str) -> list:
     """
     Initiates the chat log and gets the context of the company
 
@@ -237,6 +293,7 @@ def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> 
         new_message = {
             "role": message["role"],
             "content": message["content"],
+            "id": message["id"],
         }
 
         if message["tool_calls"] != []:
@@ -250,6 +307,21 @@ def build_chat_log_from_conversation_history(messages: list, chat_log: list) -> 
 
         chat_log.append(new_message)
 
+    return chat_log
+
+
+def filter_out_id_from_chat_log(chat_log: list) -> list:
+    """
+    Filters out the id from the chat log
+
+    Args:
+        chat_log (list): The chat log to filter
+
+    Returns:
+        list: The filtered chat log
+    """
+    for message in chat_log:
+        message.pop("id", None)
     return chat_log
 
 
@@ -282,19 +354,6 @@ def print_chat_log_without_context(chat_log: list):
     Args:
         chat_log (list): The chat log to print
     """
-    temp_log = chat_log.copy()
-    temp_log[0] = {}
-    for message in temp_log:
-        print(message)
-
-
-def pretty_print_conversation(messages):
-    """
-    Prints the conversation in a pretty format for debugging purposes
-
-    Args:
-        messages (_type_): The messages to print
-    """
     role_to_color = {
         "system": "red",
         "user": "green",
@@ -302,35 +361,8 @@ def pretty_print_conversation(messages):
         "tool": "magenta",
     }
 
-    for message in messages:
+    for message in chat_log:
         if message["role"] == "system":
-            # print(
-            #     colored(
-            #         f"system: {message['content']}\n", role_to_color[message["role"]]
-            #     )
-            # )
+            print(colored("context", role_to_color["system"]))
             continue
-        elif message["role"] == "user":
-            print(
-                colored(f"user: {message['content']}\n", role_to_color[message["role"]])
-            )
-        elif message["role"] == "assistant" and message.get("function_call"):
-            print(
-                colored(
-                    f"assistant: {message['function_call']}\n",
-                    role_to_color[message["role"]],
-                )
-            )
-        elif message["role"] == "assistant" and not message.get("function_call"):
-            print(
-                colored(
-                    f"assistant: {message['content']}\n", role_to_color[message["role"]]
-                )
-            )
-        elif message["role"] == "tool":
-            print(
-                colored(
-                    f"function ({message['name']}): {message['content']}\n",
-                    role_to_color[message["role"]],
-                )
-            )
+        print(colored(message, role_to_color[message["role"]]))
