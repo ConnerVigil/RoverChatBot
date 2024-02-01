@@ -3,7 +3,7 @@ from termcolor import colored
 from clients import environment
 
 
-def create_gpt_response(model: str, messages: list, tools: list, tool_choice: str):
+def create_gpt_response(model: str, messages: list, tool_choice: str, tools: list = None):
     """
     Uses the Open AI client to make a response with the conversation so far and other parameters.
 
@@ -16,12 +16,19 @@ def create_gpt_response(model: str, messages: list, tools: list, tool_choice: st
     Returns:
         _type_: The response from the OpenAI client
     """
-    response = openAI_client.chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools,
-        tool_choice=tool_choice,
-    )
+    if tools:
+        response = openAI_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+            tool_choice=tool_choice,
+        )
+    else:
+        response = openAI_client.chat.completions.create(
+            model=model,
+            messages=messages,
+            tool_choice=tool_choice,
+        )
 
     if environment == "development":
         print(

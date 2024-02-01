@@ -147,7 +147,7 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
 
         # get a new response from the model where it can see the function response
         second_response = create_gpt_response(
-            model=CHATGPT_MODEL, messages=chat_log, tools=[], tool_choice="none"
+            model=CHATGPT_MODEL, messages=chat_log, tool_choice="none"
         )
         answer = second_response.choices[0].message.content
 

@@ -1,7 +1,7 @@
 from clients import supabase
 from datetime import datetime, timezone
 
-SECONDS_FOR_CONVERSATION_TO_BE_INACTIVE = 3 * 24 * 60 * 60
+SECONDS_FOR_CONVERSATION_TO_BE_INACTIVE = 1 * 24 * 60 * 60
 
 
 def get_user_by_phone_number(phone_number: str):
@@ -230,7 +230,7 @@ def insert_message(
 def check_if_conversation_is_active(conversation_id: str) -> bool:
     """
     Uses the conversation id to check if the conversation is active.
-    Inactive conversations are conversations in which at 3 days have
+    Inactive conversations are conversations in which at least 1 day has
     passed since the last message was sent.
 
     Args:
