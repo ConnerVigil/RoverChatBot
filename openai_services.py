@@ -27,7 +27,6 @@ def create_gpt_response(model: str, messages: list, tool_choice: str, tools: lis
         response = openAI_client.chat.completions.create(
             model=model,
             messages=messages,
-            tool_choice=tool_choice,
         )
 
     if environment == "development":
