@@ -3,7 +3,9 @@ from termcolor import colored
 from clients import environment
 
 
-def create_gpt_response(model: str, messages: list, tool_choice: str, tools: list = None):
+def create_gpt_response(
+    model: str, messages: list, tool_choice: str, tools: list = None
+):
     """
     Uses the Open AI client to make a response with the conversation so far and other parameters.
 
