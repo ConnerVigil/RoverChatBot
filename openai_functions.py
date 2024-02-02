@@ -42,6 +42,7 @@ def pass_customer_to_representative(
     print(f"Email: {email}")
     print(f"Callback Times: {callback_times}")
     # send_lead_to_sales_team()
+    return json.dumps({"result": "Customer passed to representative"})
 
 
 tools = [
