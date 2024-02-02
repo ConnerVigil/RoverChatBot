@@ -37,4 +37,3 @@ def send_email(subject: str, body: str, sender: str, recipients: list[str]):
         password = os.getenv("EMAIL_PASSWORD")
         smtp_server.login(sender, password)
         smtp_server.sendmail(sender, recipients, msg.as_string())
-

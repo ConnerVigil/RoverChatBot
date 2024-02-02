@@ -4,21 +4,6 @@ from db_services import *
 from email_services import send_lead_to_sales_team
 
 
-def book_appointment(date: str, time: str) -> str:
-    """
-    Books an appointment for an inspection
-
-    Args:
-        date (str): The date of the appointment
-        time (str): The time of the appointment
-
-    Returns:
-        str: A string confirming the appointment
-    """
-    print("Booking Appointment...")
-    return json.dumps({"date booked": date, "time booked": time})
-
-
 def get_current_date_and_time() -> str:
     """
     Gets the current date and time
@@ -59,29 +44,7 @@ def pass_customer_to_representative(
     # send_lead_to_sales_team()
 
 
-
 tools = [
-    # {
-    #     "type": "function",
-    #     "function": {
-    #         "name": "book_appointment",
-    #         "description": "Book an appointment for the customer",
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "date": {
-    #                     "type": "string",
-    #                     "description": "The date of the appointment",
-    #                 },
-    #                 "time": {
-    #                     "type": "string",
-    #                     "description": "The time of the appointment",
-    #                 },
-    #             },
-    #             "required": ["date", "time"],
-    #         },
-    #     },
-    # },
     {
         "type": "function",
         "function": {
@@ -152,10 +115,6 @@ tools = [
 ]
 
 available_functions = {
-    # "book_appointment": {
-    #     "function": book_appointment,
-    #     "parameters": ["date", "time"],
-    # },
     "get_current_date_and_time": {
         "function": get_current_date_and_time,
         "parameters": [],
