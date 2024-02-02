@@ -1,6 +1,7 @@
 from datetime import datetime
 import json
 from db_services import *
+from email_services import send_lead_to_sales_team
 
 
 def book_appointment(date: str, time: str) -> str:
@@ -47,8 +48,16 @@ def save_customers_personal_information(
     return json.dumps({"result": "Customer information saved"})
 
 
-def pass_customer_to_representative(user: object) -> str:
-    pass
+def pass_customer_to_representative(
+    first_name: str, last_name: str, email: str, callback_times: list
+) -> str:
+    print("Passing customer to representative...")
+    print(f"First Name: {first_name}")
+    print(f"Last Name: {last_name}")
+    print(f"Email: {email}")
+    print(f"Callback Times: {callback_times}")
+    # send_lead_to_sales_team()
+
 
 
 tools = [
@@ -110,6 +119,36 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "pass_customer_to_representative",
+            "description": "Pass the customer to a representative by email",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "description": "The customer's first name",
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "description": "The customer's last name",
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "The customer's email",
+                    },
+                    "callback_times": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "A list of times the representative can call the customer",
+                    },
+                },
+                "required": ["first_name", "last_name", "email", "callback_times"],
+            },
+        },
+    },
 ]
 
 available_functions = {
@@ -124,5 +163,9 @@ available_functions = {
     "save_customers_personal_information": {
         "function": save_customers_personal_information,
         "parameters": ["first_name", "last_name", "email"],
+    },
+    "pass_customer_to_representative": {
+        "function": pass_customer_to_representative,
+        "parameters": ["first_name", "last_name", "email", "callback_times"],
     },
 }
