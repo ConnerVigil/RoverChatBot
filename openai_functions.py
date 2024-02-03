@@ -1,31 +1,23 @@
 from datetime import datetime
 import json
 from db_services import *
+from email_services import send_lead_to_sales_team
+import pytz
 
 
-def book_appointment(date: str, time: str) -> str:
-    """
-    Books an appointment for an inspection
-
-    Args:
-        date (str): The date of the appointment
-        time (str): The time of the appointment
-
-    Returns:
-        str: A string confirming the appointment
-    """
-    print("Booking Appointment...")
-    return json.dumps({"date booked": date, "time booked": time})
-
-
-def get_current_date_and_time() -> str:
+def get_current_date_and_time(company_time_zone: str) -> str:
     """
     Gets the current date and time
+
+    Args:
+        company_time_zone (str): The time zone of the company
 
     Returns:
         str: The current date and time
     """
-    current_date_time = datetime.now()
+    utc_now = datetime.datetime.utcnow()
+    company_timezone = pytz.timezone(company_time_zone)
+    current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
     return current_date_time.isoformat()
 
 
@@ -47,32 +39,19 @@ def save_customers_personal_information(
     return json.dumps({"result": "Customer information saved"})
 
 
-def pass_customer_to_representative(user: object) -> str:
-    pass
+def pass_customer_to_representative(
+    first_name: str, last_name: str, email: str, callback_times: list
+) -> str:
+    print("Passing customer to representative...")
+    print(f"First Name: {first_name}")
+    print(f"Last Name: {last_name}")
+    print(f"Email: {email}")
+    print(f"Callback Times: {callback_times}")
+    # send_lead_to_sales_team()
+    return json.dumps({"result": "Customer passed to representative"})
 
 
 tools = [
-    # {
-    #     "type": "function",
-    #     "function": {
-    #         "name": "book_appointment",
-    #         "description": "Book an appointment for the customer",
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "date": {
-    #                     "type": "string",
-    #                     "description": "The date of the appointment",
-    #                 },
-    #                 "time": {
-    #                     "type": "string",
-    #                     "description": "The time of the appointment",
-    #                 },
-    #             },
-    #             "required": ["date", "time"],
-    #         },
-    #     },
-    # },
     {
         "type": "function",
         "function": {
@@ -80,8 +59,13 @@ tools = [
             "description": "Get the current date and time",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": [],
+                "properties": {
+                    "company_time_zone": {
+                        "type": "string",
+                        "description": "The time zone of the company. For example, 'US/Pacific' or 'US/Eastern'",
+                    },
+                },
+                "required": ["company_time_zone"],
             },
         },
     },
@@ -110,13 +94,39 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "pass_customer_to_representative",
+            "description": "Pass the customer to a representative by email",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "first_name": {
+                        "type": "string",
+                        "description": "The customer's first name",
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "description": "The customer's last name",
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "The customer's email",
+                    },
+                    "callback_times": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "A list of times the representative can call the customer",
+                    },
+                },
+                "required": ["first_name", "last_name", "email", "callback_times"],
+            },
+        },
+    },
 ]
 
 available_functions = {
-    # "book_appointment": {
-    #     "function": book_appointment,
-    #     "parameters": ["date", "time"],
-    # },
     "get_current_date_and_time": {
         "function": get_current_date_and_time,
         "parameters": [],
@@ -124,5 +134,9 @@ available_functions = {
     "save_customers_personal_information": {
         "function": save_customers_personal_information,
         "parameters": ["first_name", "last_name", "email"],
+    },
+    "pass_customer_to_representative": {
+        "function": pass_customer_to_representative,
+        "parameters": ["first_name", "last_name", "email", "callback_times"],
     },
 }

@@ -3,4 +3,3 @@ venv/
 __pycache__
 .vscode
 ringcentral_services.py
-email_testing.py
