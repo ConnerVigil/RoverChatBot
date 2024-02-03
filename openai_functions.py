@@ -2,16 +2,22 @@ from datetime import datetime
 import json
 from db_services import *
 from email_services import send_lead_to_sales_team
+import pytz
 
 
-def get_current_date_and_time() -> str:
+def get_current_date_and_time(company_time_zone: str) -> str:
     """
     Gets the current date and time
+
+    Args:
+        company_time_zone (str): The time zone of the company
 
     Returns:
         str: The current date and time
     """
-    current_date_time = datetime.now()
+    utc_now = datetime.datetime.utcnow()
+    company_timezone = pytz.timezone(company_time_zone)
+    current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
     return current_date_time.isoformat()
 
 
@@ -53,8 +59,13 @@ tools = [
             "description": "Get the current date and time",
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": [],
+                "properties": {
+                    "company_time_zone": {
+                        "type": "string",
+                        "description": "The time zone of the company. For example, 'US/Pacific' or 'US/Eastern'",
+                    },
+                },
+                "required": ["company_time_zone"],
             },
         },
     },
