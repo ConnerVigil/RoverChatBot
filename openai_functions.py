@@ -15,7 +15,6 @@ def get_current_date_and_time(company_time_zone: str) -> str:
     Returns:
         str: The current date and time
     """
-    print("parameter: ", company_time_zone)
     utc_now = datetime.utcnow()
     company_timezone = pytz.timezone(company_time_zone)
     current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
