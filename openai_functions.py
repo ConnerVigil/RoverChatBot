@@ -15,7 +15,8 @@ def get_current_date_and_time(company_time_zone: str) -> str:
     Returns:
         str: The current date and time
     """
-    utc_now = datetime.datetime.utcnow()
+    print("parameter: ", company_time_zone)
+    utc_now = datetime.utcnow()
     company_timezone = pytz.timezone(company_time_zone)
     current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
     return current_date_time.isoformat()
@@ -129,7 +130,7 @@ tools = [
 available_functions = {
     "get_current_date_and_time": {
         "function": get_current_date_and_time,
-        "parameters": [],
+        "parameters": ["company_time_zone"],
     },
     "save_customers_personal_information": {
         "function": save_customers_personal_information,
