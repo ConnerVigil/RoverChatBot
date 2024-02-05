@@ -144,7 +144,7 @@ def missedCall():
 
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
-        body = request.get_json()
+        body = request
         sender = "conner@textrover.co"
         recipients = ["cjvigil@live.com"]
         send_email(subject, body, sender, recipients)
