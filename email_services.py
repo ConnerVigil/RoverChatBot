@@ -8,7 +8,7 @@ load_dotenv()
 
 def send_lead_to_sales_team(body: str, recipients: list[str]):
     """
-    Sends a lead to the sales team
+    Sends a lead to the sales team from conner's work email
 
     Args:
         body (str): The body of the email
