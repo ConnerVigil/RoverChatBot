@@ -141,7 +141,28 @@ def missedCall():
         validation_token = request.headers.get("Validation-Token")
         print(f"Received validation token: {validation_token}")
 
-        # TODO: Function for handling missed call logic
+
+        """ 
+        # try catch block: .... validation_token. 
+
+        # pulling from the data RingCentral gives us about the call...
+        # ... will look something like the following: 
+
+        # to_phone_number = request['to_phone_number']
+        # from_phone_number = request['from_phone_number']
+
+        user_id, conversation_id = retrieve_current_conversation(from_phone_number);
+
+        # add to supabase. 
+        missed_call = supabase.table("Missed_Calls").insert(
+            {
+                "conversation_id": conversation_id,
+                "to_phone_number": to_phone_number,
+                "from_phone_number", from_phone_number
+            }
+        ).execute()
+        """
+
 
         return Response(status=200, headers={"Validation-Token": validation_token})
     except Exception as e:
