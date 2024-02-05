@@ -146,9 +146,13 @@ def missedCall():
         app.logger.debug("request: %s", request)
         app.logger.debug("request: %s", request.headers)
 
+        headers = request.headers
+        body = "No headers"
+        if headers:
+            body = "There are headers"
+
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
-        body = "this is the body"
         sender = "conner@textrover.co"
         recipients = ["cjvigil@live.com"]
         send_email(subject, body, sender, recipients)
