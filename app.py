@@ -8,6 +8,7 @@ from flask_cors import CORS
 import sentry_sdk
 import os
 from dotenv import load_dotenv
+from email_services import send_email
 
 load_dotenv()
 
@@ -142,6 +143,11 @@ def missedCall():
         print(f"Received validation token: {validation_token}")
 
         # TODO: Function for handling missed call logic
+        subject = "Missed Call to Banner PC"
+        body = request.get_json()
+        sender = "conner@textrover.co"
+        recipients = ["cjvigil@live.com"]
+        send_email(subject, body, sender, recipients)
 
         return Response(status=200, headers={"Validation-Token": validation_token})
     except Exception as e:

@@ -15,6 +15,7 @@ def get_current_date_and_time(company_time_zone: str) -> str:
     Returns:
         str: The current date and time
     """
+    print(f"Company Time Zone: {company_time_zone}")
     utc_now = datetime.utcnow()
     company_timezone = pytz.timezone(company_time_zone)
     current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
@@ -42,11 +43,13 @@ def save_customers_personal_information(
 def pass_customer_to_representative(
     first_name: str, last_name: str, email: str, callback_times: list
 ) -> str:
+    print("")
     print("Passing customer to representative...")
     print(f"First Name: {first_name}")
     print(f"Last Name: {last_name}")
     print(f"Email: {email}")
     print(f"Callback Times: {callback_times}")
+    print("")
     # send_lead_to_sales_team()
     return json.dumps({"result": "Customer passed to representative"})
 
