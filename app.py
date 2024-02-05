@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, request, Response, jsonify
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
@@ -142,9 +143,12 @@ def missedCall():
         validation_token = request.headers.get("Validation-Token")
         print(f"Received validation token: {validation_token}")
 
+        app.logger.debug("request: %s", request)
+        app.logger.debug("request: %s", request.headers)
+
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
-        body = request
+        body = "this is the body"
         sender = "conner@textrover.co"
         recipients = ["cjvigil@live.com"]
         send_email(subject, body, sender, recipients)
@@ -183,4 +187,7 @@ def waitlist():
 
 
 if __name__ == "__main__":
-    app.run()  # debug=True
+    app.run()
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
