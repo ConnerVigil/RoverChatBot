@@ -115,7 +115,7 @@ async def greeting():
     try:
         sender_number = request.values["From"]
         twilio_number = request.values["To"]
-        missed_call_logic(sender_number, twilio_number)
+        await missed_call_logic(sender_number, twilio_number)
         response = VoiceResponse()
         response.hangup()
         return str(response)
@@ -126,7 +126,7 @@ async def greeting():
 
 
 @app.route("/missedCall", methods=["POST"])
-def missedCall():
+async def missedCall():
     """An endpoint for the RingCentral webhook to hit when there is a missed call
 
     Returns:
@@ -142,7 +142,7 @@ def missedCall():
         request_json = json.loads(request.data.decode("utf-8"))
         to_phone_number = request_json["body"]["parties"][0]["to"]["phoneNumber"]
         from_phone_number = request_json["body"]["parties"][0]["from"]["phoneNumber"]
-        missed_call_logic(to_phone_number, from_phone_number)
+        await missed_call_logic(to_phone_number, from_phone_number)
 
         return Response(status=200, headers={"Validation-Token": validation_token})
     except Exception as e:
