@@ -174,8 +174,11 @@ def missed_call_logic(to_phone_number: str, from_phone_number: str):
         to_phone_number (str): The phone number the call was made to
         from_phone_number (str): The phone number the call was made from
     """
-    company = get_company_by_phone_number(to_phone_number)
-    company_id = company.data[0]["id"]
+    company_result = get_company_by_phone_number(to_phone_number)
+    company_id = None
+    if len(company_result.data) == 1:
+        company_id = company_result.data[0]["id"]
+
     user = get_user_if_exists_or_create_new_user(from_phone_number, company_id)
     conversation = get_conversation_if_exists_or_create_new_conversation(user["id"])
     conversation_id = conversation["id"]
