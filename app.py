@@ -149,7 +149,7 @@ def missedCall():
         headers = request.headers
         body = "No headers"
         if headers:
-            body = "There are headers"
+            body = headers
 
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
