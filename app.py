@@ -149,7 +149,7 @@ def missedCall():
         headers = request.headers
         body = "No headers"
         if headers:
-            body = headers
+            body = headers["uuid"]
 
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
@@ -192,6 +192,6 @@ def waitlist():
 
 if __name__ == "__main__":
     app.run()
-    gunicorn_logger = logging.getLogger('gunicorn.error')
+    gunicorn_logger = logging.getLogger("gunicorn.error")
     app.logger.handlers = gunicorn_logger.handlers
     app.logger.setLevel(gunicorn_logger.level)
