@@ -141,23 +141,15 @@ def missedCall():
     """
     try:
         validation_token = request.headers.get("Validation-Token")
-        print(f"Received validation token: {validation_token}")
-        print(f"Request: {request}")
-        print(f"Request headers: {request.headers}")
 
-        # app.logger.debug("request: %s", request)
-        # app.logger.debug("request: %s", request.headers)
+        content_length = int(request.headers["content-length"])
+        if content_length == 0:
+            return Response(status=200, headers={"Validation-Token": validation_token})
 
-        headers = request.headers
-        body = "No headers"
-        if headers:
-            body = headers["content-length"]
-
-        # TODO: Function for handling missed call logic
-        subject = "Missed Call to Banner PC"
-        sender = "conner@textrover.co"
-        recipients = ["cjvigil@live.com"]
-        send_email(subject, body, sender, recipients)
+        request_json = json.loads(request.data.decode("utf-8"))
+        to_phone_number = request_json["body"]["parties"][0]["to"]["phoneNumber"]
+        from_phone_number = request_json["body"]["parties"][0]["from"]["phoneNumber"]
+        missed_call_logic(to_phone_number, from_phone_number)
 
         return Response(status=200, headers={"Validation-Token": validation_token})
     except Exception as e:

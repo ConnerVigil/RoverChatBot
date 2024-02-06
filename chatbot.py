@@ -6,6 +6,7 @@ from openai_functions import tools, available_functions
 from db_services import *
 from openai_services import *
 from clients import environment
+from twilio_services import send_message_twilio
 
 CHATGPT_MODEL = "gpt-3.5-turbo-1106"
 RESPONSE_SLEEP_TIME = 5
@@ -163,6 +164,48 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
     )
 
     return answer
+
+
+def missed_call_logic(to_phone_number: str, from_phone_number: str):
+    """
+    The logic for when a missed call is received
+
+    Args:
+        to_phone_number (str): The phone number the call was made to
+        from_phone_number (str): The phone number the call was made from
+    """
+    # # Check if user exists
+    # user_result = get_user_by_phone_number(from_phone_number)
+    # if len(user_result.data) == 1:
+    #     # If user exists, check if there is an active conversation
+    #     conversation_result = get_conversation_by_user_id(user_result.data[0]["id"])
+    #     if len(conversation_result.data) == 1:
+    #         conversation_id = conversation_result.data[0]["id"]
+    #         if check_if_conversation_is_active(conversation_id):
+    #             # If there is an active conversation, send a message to the user
+    #             return
+    #         else:
+    #             # If there is no active conversation, create a new conversation and send a message to the user
+    #             return
+    #     else:
+    #         # If there is no conversation, create a new conversation and send a message to the user
+    #         return
+    # else:
+    #     # If there is no user, create a new user and conversation and send a message to the user
+    #     return
+
+    # user_id, conversation_id = register_user_and_conversation(from_phone_number, to_phone_number)
+    insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
+
+    # company_result = get_company_by_phone_number(to_phone_number)
+    # if len(company_result.data) == 1:
+    #     company_name = company_result.data[0]["name"]
+    #     message = f"Hello, welcome to {company_name}. Sorry, we missed your call. How can I help you?"
+    # else:
+    #     message = "Hello, sorry we missed your call. How can I help you?"
+
+    # send_message_twilio(message, from_phone_number, to_phone_number)
+    # insert_message(message, "assistant", user_id, conversation_id)
 
 
 def retrieve_current_conversation(

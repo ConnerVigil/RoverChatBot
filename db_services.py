@@ -338,3 +338,31 @@ def insert_into_waitlist(first_name: str, last_name: str, email: str):
         .execute()
     )
     return res
+
+
+def insert_into_missed_calls(
+    to_phone_number: str, from_phone_number: str, conversation_id: str = None
+):
+    """
+    Insert a missed call into the database
+
+    Args:
+        to_phone_number (str): The phone number that was called
+        from_phone_number (str): The phone number that called
+        conversation_id (str, optional): The id of the conversation
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Missed_Calls")
+        .insert(
+            {
+                "to_phone_number": to_phone_number,
+                "from_phone_number": from_phone_number,
+                "conversation_id": conversation_id,
+            }
+        )
+        .execute()
+    )
+    return res
