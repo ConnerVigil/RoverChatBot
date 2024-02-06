@@ -67,6 +67,14 @@ def pass_customer_to_representative(
     if len(user_result.data) == 1:
         phone_number = user_result.data[0]["phone_number"]
 
+
+    new_call_back_times = []
+    for time in callback_times:
+        date_time_object = datetime.fromisoformat(time)
+        formatted_time = date_time_object.strftime("%m/%d/%Y %I:%M %p")
+        new_call_back_times.append(formatted_time)
+
+
     body = f"""
     New Lead from Rover AI
 
@@ -76,7 +84,7 @@ def pass_customer_to_representative(
 
     Email: {email}
 
-    Callback Times: {', '.join(callback_times)}
+    Callback Times: {', '.join(new_call_back_times)}
 
     Summary of Interaction: {summary_of_interation}
     """

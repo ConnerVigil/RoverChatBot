@@ -239,9 +239,6 @@ def get_conversation_if_exists_or_create_new_conversation(user_id: str):
     return conversation
 
 
-# TODO: remove the foreign key relation on messages table that relates to user table
-# Where do companies fit in?
-
 def get_chat_log(conversation_id: str, twilio_phone_number: str) -> list:
     """
     Gets the chat log from the conversation
