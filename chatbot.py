@@ -27,9 +27,12 @@ def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> st
     Returns:
         str: The answer from the bot
     """
-    user_id, conversation_id = retrieve_current_conversation(
-        sender_phone_number, twilio_number
-    )
+    company_result = get_company_by_phone_number(twilio_number)
+    company_id = company_result.data[0]["id"]
+    user = get_user_if_exists_or_create_new_user(sender_phone_number, company_id)
+    user_id = user["id"]
+    conversation = get_conversation_if_exists_or_create_new_conversation(user_id)
+    conversation_id = conversation["id"]
 
     message_insert_result = insert_message(
         content=question, role="user", user_id=user_id, conversation_id=conversation_id
@@ -174,70 +177,71 @@ def missed_call_logic(to_phone_number: str, from_phone_number: str):
         to_phone_number (str): The phone number the call was made to
         from_phone_number (str): The phone number the call was made from
     """
-    # # Check if user exists
-    # user_result = get_user_by_phone_number(from_phone_number)
-    # if len(user_result.data) == 1:
-    #     # If user exists, check if there is an active conversation
-    #     conversation_result = get_conversation_by_user_id(user_result.data[0]["id"])
-    #     if len(conversation_result.data) == 1:
-    #         conversation_id = conversation_result.data[0]["id"]
-    #         if check_if_conversation_is_active(conversation_id):
-    #             # If there is an active conversation, send a message to the user
-    #             return
-    #         else:
-    #             # If there is no active conversation, create a new conversation and send a message to the user
-    #             return
-    #     else:
-    #         # If there is no conversation, create a new conversation and send a message to the user
-    #         return
-    # else:
-    #     # If there is no user, create a new user and conversation and send a message to the user
-    #     return
+    company = get_company_by_phone_number(to_phone_number)
+    company_id = company.data[0]["id"]
+    user = get_user_if_exists_or_create_new_user(from_phone_number, company_id)
+    conversation = get_conversation_if_exists_or_create_new_conversation(user["id"])
+    user_id = user["id"]
+    conversation_id = conversation["id"]
 
-    # user_id, conversation_id = register_user_and_conversation(from_phone_number, to_phone_number)
-    insert_into_missed_calls(to_phone_number, from_phone_number)
+    company_result = get_company_by_phone_number(to_phone_number)
+    if len(company_result.data) == 1:
+        company_name = company_result.data[0]["name"]
+        message = f"Hello, welcome to {company_name}. Sorry, we missed your call. How can I help you?"
+    else:
+        message = "Hello, sorry we missed your call. How can I help you?"
 
-    # company_result = get_company_by_phone_number(to_phone_number)
-    # if len(company_result.data) == 1:
-    #     company_name = company_result.data[0]["name"]
-    #     message = f"Hello, welcome to {company_name}. Sorry, we missed your call. How can I help you?"
-    # else:
-    #     message = "Hello, sorry we missed your call. How can I help you?"
-
-    # send_message_twilio(message, from_phone_number, to_phone_number)
-    # insert_message(message, "assistant", user_id, conversation_id)
+    send_message_twilio(message, from_phone_number, to_phone_number)
+    insert_message(message, "assistant", user_id, conversation_id)
+    insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
 
 
-def retrieve_current_conversation(
-    sender_phone_number: str, twilio_phone_number: str
-) -> list:
+def get_user_if_exists_or_create_new_user(phone_number: str, company_id: str = None):
     """
-    Retrieves the current conversation
+    Get the user if it exists, or create a new user
 
     Args:
-        sender_phone_number (str): The phone number of the sender
-        twilio_phone_number (str): The phone number of the company
-
-    Raises:
-        Exception: More than one user with the same phone number
+        phone_number (str): The phone number of the user
+        company_id (str, optional): The id of the company that the user is messaging. Defaults to None.
 
     Returns:
-        list: A list containing the user id and conversation id
+        _type_: The user object
     """
-    result = get_user_by_phone_number(sender_phone_number)
-
-    if len(result.data) == 0:
-        user_id, conversation_id = register_user_and_conversation(
-            sender_phone_number, twilio_phone_number
-        )
-    elif len(result.data) == 1:
-        user_id = result.data[0]["id"]
-        conversation_id = get_conversation_id_of_existing_user(user_id)
+    user_result = get_user_by_phone_number(phone_number)
+    if not user_result.data:
+        user_insert_result = insert_user(phone_number, company_id)
+        user = user_insert_result.data[0]
     else:
-        raise Exception("More than one user with the same phone number")
+        user = user_result.data[0]
+    return user
 
-    return user_id, conversation_id
 
+def get_conversation_if_exists_or_create_new_conversation(user_id: str):
+    """
+    Get the conversation if it exists, or create a new conversation
+
+    Args:
+        user_id (str): The id of the user
+
+    Returns:
+        _type_: The conversation object
+    """
+    conversation_result = get_conversation_by_user_id(user_id)
+    if not conversation_result.data:
+        conversation_insert_result = insert_conversation(user_id)
+        conversation = conversation_insert_result.data[0]
+    else:
+        if check_if_conversation_is_active(conversation_result.data[0]["id"]):
+            conversation = conversation_result.data[0]
+        else:
+            conversation_insert_result = insert_conversation(user_id)
+            conversation = conversation_insert_result.data[0]
+
+    return conversation
+
+
+# TODO: remove the foreign key relation on messages table that relates to user table
+# Where do companies fit in?
 
 def get_chat_log(conversation_id: str, twilio_phone_number: str) -> list:
     """
@@ -254,52 +258,6 @@ def get_chat_log(conversation_id: str, twilio_phone_number: str) -> list:
     messages_result = get_messages_by_conversation_id(conversation_id)
     chat_log = build_chat_log_from_conversation_history(messages_result.data, chat_log)
     return chat_log
-
-
-def register_user_and_conversation(
-    sender_phone_number: str, twilio_phone_number: str
-) -> list:
-    """
-    Registers a user and conversation
-
-    Args:
-        sender_phone_number (str): The phone number of the sender
-        twilio_phone_number (str): The phone number of the company
-
-    Returns:
-        list: A list containing the user id and conversation id
-    """
-    company_result = get_company_by_phone_number(twilio_phone_number)
-
-    if len(company_result.data) == 1:
-        company_id = company_result.data[0]["id"]
-        user_insert_result = insert_user(sender_phone_number, company_id)
-    else:
-        user_insert_result = insert_user(sender_phone_number)
-
-    user_id = user_insert_result.data[0]["id"]
-    conversation_insert_result = insert_conversation(user_id)
-    conversation_id = conversation_insert_result.data[0]["id"]
-    return user_id, conversation_id
-
-
-def get_conversation_id_of_existing_user(user_id: str) -> list:
-    """Get the conversation id of an existing user, checking if the conversation is active
-
-    Args:
-        user_id (str): The id of the user
-
-    Returns:
-        list: The conversation id
-    """
-    conversation_result = get_conversation_by_user_id(user_id)
-    conversation_id = conversation_result.data[0]["id"]
-
-    if not check_if_conversation_is_active(conversation_id):
-        conversation_insert_result = insert_conversation(user_id)
-        conversation_id = conversation_insert_result.data[0]["id"]
-
-    return conversation_id
 
 
 def initiate_chat_log_and_get_context(company_phone_number: str) -> list:
@@ -366,28 +324,6 @@ def filter_out_id_from_chat_log(chat_log: list) -> list:
     for message in chat_log:
         message.pop("id", None)
     return chat_log
-
-
-def get_conversation_id_by_phone_number(sender_phone_number: str) -> str:
-    """
-    Gets the conversation id by the phone number
-
-    Args:
-        sender_phone_number (str): The phone number of the sender
-
-    Returns:
-        str: The conversation id, or None if there is no conversation
-    """
-    result = get_user_by_phone_number(sender_phone_number)
-
-    if len(result.data) == 1:
-        user_id = result.data[0]["id"]
-        conversation_result = get_conversation_by_user_id(user_id)
-        conversation_id = conversation_result.data[0]["id"]
-        return conversation_id
-    else:
-        print(f"ERROR - no user with the phone number: {sender_phone_number}")
-        return None
 
 
 def print_chat_log_without_context(chat_log: list):

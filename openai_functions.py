@@ -25,7 +25,8 @@ def get_current_date_and_time(company_time_zone: str) -> str:
 def save_customers_personal_information(
     phone_number: str, first_name: str = None, last_name: str = None, email: str = None
 ):
-    """Saves the customer's personal information to the database
+    """
+    Saves the customer's personal information to the database
 
     Args:
         phone_number (str): The phone number of the customer
@@ -41,16 +42,39 @@ def save_customers_personal_information(
 
 
 def pass_customer_to_representative(
-    first_name: str, last_name: str, email: str, callback_times: list
+    first_name: str,
+    last_name: str,
+    email: str,
+    callback_times: list,
+    summary_of_interation: str,
 ) -> str:
-    print("")
-    print("Passing customer to representative...")
-    print(f"First Name: {first_name}")
-    print(f"Last Name: {last_name}")
-    print(f"Email: {email}")
-    print(f"Callback Times: {callback_times}")
-    print("")
-    # send_lead_to_sales_team()
+    """
+    Passes the customer to a representative by email
+
+    Args:
+        first_name (str): The customer's first name
+        last_name (str): The customer's last name
+        email (str): The customer's email
+        callback_times (list): A list of times the representative can call the customer
+        summary_of_interation (str): A summary of the interaction with the customer
+
+    Returns:
+        str: A string confirming that the customer was passed to the representative
+    """
+
+    body = f"""
+    New Lead from Rover AI
+
+    Name: {first_name} {last_name}
+
+    Email: {email}
+
+    Callback Times: {', '.join(callback_times)}
+
+    Summary of Interaction: {summary_of_interation}
+    """
+
+    send_lead_to_sales_team(body, ["talmage@textrover.co", "conner@textrover.co"])
     return json.dumps({"result": "Customer passed to representative"})
 
 
@@ -122,6 +146,10 @@ tools = [
                         "items": {"type": "string"},
                         "description": "A list of times the representative can call the customer",
                     },
+                    "summary_of_interation": {
+                        "type": "string",
+                        "description": "A summary of the interaction with the customer",
+                    },
                 },
                 "required": ["first_name", "last_name", "email", "callback_times"],
             },
@@ -140,6 +168,12 @@ available_functions = {
     },
     "pass_customer_to_representative": {
         "function": pass_customer_to_representative,
-        "parameters": ["first_name", "last_name", "email", "callback_times"],
+        "parameters": [
+            "first_name",
+            "last_name",
+            "email",
+            "callback_times",
+            "summary_of_interation",
+        ],
     },
 }

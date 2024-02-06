@@ -115,14 +115,7 @@ async def greeting():
     try:
         sender_number = request.values["From"]
         twilio_number = request.values["To"]
-        await send_message_twilio(
-            "Hello, sorry we missed your call. How can I help you?",
-            sender_number,
-            twilio_number,
-        )
-
-        # TODO: Function for handling missed call logic
-
+        missed_call_logic(sender_number, twilio_number)
         response = VoiceResponse()
         response.hangup()
         return str(response)
@@ -141,8 +134,8 @@ def missedCall():
     """
     try:
         validation_token = request.headers.get("Validation-Token")
-
         content_length = int(request.headers["content-length"])
+
         if content_length == 0:
             return Response(status=200, headers={"Validation-Token": validation_token})
 
