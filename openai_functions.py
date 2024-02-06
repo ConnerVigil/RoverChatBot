@@ -61,11 +61,18 @@ def pass_customer_to_representative(
     Returns:
         str: A string confirming that the customer was passed to the representative
     """
+    phone_number = ""
+    user_result = get_user_by_email(email)
+
+    if len(user_result.data) == 1:
+        phone_number = user_result.data[0]["phone_number"]
 
     body = f"""
     New Lead from Rover AI
 
     Name: {first_name} {last_name}
+
+    Phone Number: {phone_number}
 
     Email: {email}
 

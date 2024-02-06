@@ -178,7 +178,6 @@ def missed_call_logic(to_phone_number: str, from_phone_number: str):
     company_id = company.data[0]["id"]
     user = get_user_if_exists_or_create_new_user(from_phone_number, company_id)
     conversation = get_conversation_if_exists_or_create_new_conversation(user["id"])
-    user_id = user["id"]
     conversation_id = conversation["id"]
 
     company_result = get_company_by_phone_number(to_phone_number)

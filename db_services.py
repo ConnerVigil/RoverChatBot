@@ -32,6 +32,20 @@ def get_user_by_id(user_id: str):
     return res
 
 
+def get_user_by_email(email: str):
+    """
+    Get a user by email from the database
+
+    Args:
+        email (str): The email of the user
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = supabase.table("Users").select("*").eq("email", email).execute()
+    return res
+
+
 def insert_user(phone_number: str, company_id: str = None):
     """
     Insert a user into the database
