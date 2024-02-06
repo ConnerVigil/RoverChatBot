@@ -195,7 +195,7 @@ def missed_call_logic(to_phone_number: str, from_phone_number: str):
     #     return
 
     # user_id, conversation_id = register_user_and_conversation(from_phone_number, to_phone_number)
-    insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
+    insert_into_missed_calls(to_phone_number, from_phone_number)
 
     # company_result = get_company_by_phone_number(to_phone_number)
     # if len(company_result.data) == 1:
