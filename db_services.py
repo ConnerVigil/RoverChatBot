@@ -188,7 +188,6 @@ def get_messages_by_conversation_id(conversation_id: str):
 def insert_message(
     content: str,
     role: str,
-    user_id: str,
     conversation_id: str,
     tool_calls: list = [],
     tool_call_id: str = None,
@@ -200,7 +199,6 @@ def insert_message(
     Args:
         content (str): Content of the message
         role (str): Role of the user who sent the message
-        user_id (str): The id of the user
         conversation_id (str): The id of the conversation
         tool_calls (list, optional): A list of new tool calls. Defaults to None.
         tool_call_id (str, optional): The id of the tool call. Defaults to None.
@@ -215,7 +213,6 @@ def insert_message(
             {
                 "content": content,
                 "role": role,
-                "user_id": user_id,
                 "conversation_id": conversation_id,
                 "tool_calls": tool_calls,
                 "tool_call_id": tool_call_id,
