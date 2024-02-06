@@ -142,14 +142,16 @@ def missedCall():
     try:
         validation_token = request.headers.get("Validation-Token")
         print(f"Received validation token: {validation_token}")
+        print(f"Request: {request}")
+        print(f"Request headers: {request.headers}")
 
-        app.logger.debug("request: %s", request)
-        app.logger.debug("request: %s", request.headers)
+        # app.logger.debug("request: %s", request)
+        # app.logger.debug("request: %s", request.headers)
 
         headers = request.headers
         body = "No headers"
         if headers:
-            body = headers["uuid"]
+            body = headers["content-length"]
 
         # TODO: Function for handling missed call logic
         subject = "Missed Call to Banner PC"
