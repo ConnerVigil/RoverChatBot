@@ -35,7 +35,7 @@ def bot_logic(question: str, sender_phone_number: str, twilio_number: str) -> st
     conversation_id = conversation["id"]
 
     message_insert_result = insert_message(
-        content=question, role="user", user_id=user_id, conversation_id=conversation_id
+        content=question, role="user", conversation_id=conversation_id
     )
 
     time.sleep(RESPONSE_SLEEP_TIME)
@@ -106,7 +106,6 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
         insert_message(
             content=None,
             role="assistant",
-            user_id=user_id,
             conversation_id=conversation_id,
             tool_calls=new_tool_calls,
         )
@@ -143,7 +142,6 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
                 insert_message(
                     content=function_response,
                     role="tool",
-                    user_id=user_id,
                     conversation_id=conversation_id,
                     tool_call_id=tool_call.id,
                     function_name=function_name,
@@ -162,7 +160,6 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
     insert_message(
         content=answer,
         role="assistant",
-        user_id=user_id,
         conversation_id=conversation_id,
     )
 
@@ -192,7 +189,7 @@ def missed_call_logic(to_phone_number: str, from_phone_number: str):
         message = "Hello, sorry we missed your call. How can I help you?"
 
     send_message_twilio(message, from_phone_number, to_phone_number)
-    insert_message(message, "assistant", user_id, conversation_id)
+    insert_message(message, "assistant", conversation_id)
     insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
 
 
