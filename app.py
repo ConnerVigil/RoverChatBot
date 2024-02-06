@@ -115,7 +115,7 @@ async def greeting():
     try:
         sender_number = request.values["From"]
         twilio_number = request.values["To"]
-        await missed_call_logic(sender_number, twilio_number)
+        await missed_call_logic(twilio_number, sender_number)
         response = VoiceResponse()
         response.hangup()
         return str(response)
