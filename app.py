@@ -141,6 +141,7 @@ async def missedCall():
 
         request_json = json.loads(request.data.decode("utf-8"))
         to_phone_number = request_json["body"]["parties"][0]["to"]["phoneNumber"]
+        to_phone_number = TWILIO_NUMBER  # TEMPORARY FIX FOR TODAY
         from_phone_number = request_json["body"]["parties"][0]["from"]["phoneNumber"]
         await missed_call_logic(to_phone_number, from_phone_number)
 

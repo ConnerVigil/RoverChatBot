@@ -190,7 +190,11 @@ async def missed_call_logic(to_phone_number: str, from_phone_number: str):
     else:
         message = "Hello, sorry we missed your call. How can I help you?"
 
-    await send_message_twilio(message, from_phone_number, to_phone_number)
+    await send_message_twilio(
+        message=message,
+        receiving_number=from_phone_number,
+        sending_number=to_phone_number,
+    )
     insert_message(message, "assistant", conversation_id)
     insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
 
