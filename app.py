@@ -9,19 +9,13 @@ from flask_cors import CORS
 import sentry_sdk
 import os
 from dotenv import load_dotenv
-from email_services import send_email
 
 load_dotenv()
 
 sentry_sdk.init(
     environment=os.getenv("SENTRY_ENVIRONMENT"),
     dsn=os.getenv("SENTRY_DSN"),
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
     traces_sample_rate=1.0,
-    # Set profiles_sample_rate to 1.0 to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
 )
 
@@ -29,7 +23,6 @@ app = Flask(__name__)
 CORS(app, origins=["https://rover-landing-page.vercel.app", "http://localhost:3000"])
 
 TWILIO_NUMBER = "+13134258270"
-CONNER_NUMBER = "+18013896501"
 
 
 @app.route("/bot", methods=["POST"])

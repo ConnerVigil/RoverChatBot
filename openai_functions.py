@@ -45,7 +45,7 @@ def pass_customer_to_representative(
     first_name: str,
     last_name: str,
     email: str,
-    callback_times: list,
+    callback_times: str,
     summary_of_interation: str,
 ) -> str:
     """
@@ -55,7 +55,7 @@ def pass_customer_to_representative(
         first_name (str): The customer's first name
         last_name (str): The customer's last name
         email (str): The customer's email
-        callback_times (list): A list of times the representative can call the customer
+        callback_times (str): Times the representative can call the customer
         summary_of_interation (str): A summary of the interaction with the customer
 
     Returns:
@@ -67,22 +67,14 @@ def pass_customer_to_representative(
     if len(user_result.data) == 1:
         phone_number = user_result.data[0]["phone_number"]
 
-    new_call_back_times = []
-    for time in callback_times:
-        date_time_object = datetime.fromisoformat(time)
-        formatted_time = date_time_object.strftime("%m/%d/%Y %I:%M %p")
-        new_call_back_times.append(formatted_time)
-
     body = f"""
-    New Lead from Rover AI
-
     Name: {first_name} {last_name}
 
     Phone Number: {phone_number}
 
     Email: {email}
 
-    Callback Times: {', '.join(new_call_back_times)}
+    Callback Times: {callback_times}
 
     Summary of Interaction: {summary_of_interation}
     """
@@ -157,8 +149,7 @@ tools = [
                         "description": "The customer's email",
                     },
                     "callback_times": {
-                        "type": "array",
-                        "items": {"type": "string"},
+                        "type": "string",
                         "description": "A list of times the representative can call the customer",
                     },
                     "summary_of_interation": {
