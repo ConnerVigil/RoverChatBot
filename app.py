@@ -1,5 +1,6 @@
 import logging
 from flask import Flask, request, Response, jsonify
+import requests
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
 from chatbot import *
@@ -36,9 +37,13 @@ async def bot():
     """
     try:
         incoming_msg = request.values["Body"]
-        sender_number = request.values["From"]
+        sender_phone_number = request.values["From"]
         twilio_number = request.values["To"]
-        await async_helper(incoming_msg, sender_number, twilio_number)
+
+        if not check_company_hours(twilio_number):
+            return Response(status=204)
+        
+        await async_helper(incoming_msg, sender_phone_number, twilio_number)
         return Response(status=204)
     except NewMessagesReceived as e:
         return Response(status=204)
@@ -66,6 +71,10 @@ def devbot():
         question = data["question"]
         sender_phone_number = data["sender_phone_number"]
         twilio_number = data["twilio_phone_number"]
+
+        if not check_company_hours(twilio_number):
+            return Response(status=204)
+
         answer = bot_logic(question, sender_phone_number, twilio_number)
         response = jsonify({"answer": answer})
         response.status_code = 200
@@ -108,6 +117,10 @@ async def greeting():
     try:
         sender_number = request.values["From"]
         twilio_number = request.values["To"]
+
+        if not check_company_hours(twilio_number):
+            return Response(status=204)
+        
         await missed_call_logic(twilio_number, sender_number)
         response = VoiceResponse()
         response.hangup()
@@ -136,6 +149,10 @@ async def missedCall():
         to_phone_number = request_json["body"]["parties"][0]["to"]["phoneNumber"]
         to_phone_number = TWILIO_NUMBER  # TEMPORARY FIX FOR TODAY
         from_phone_number = request_json["body"]["parties"][0]["from"]["phoneNumber"]
+
+        if not check_company_hours(to_phone_number):
+            return Response(status=204)
+
         await missed_call_logic(to_phone_number, from_phone_number)
 
         return Response(status=200, headers={"Validation-Token": validation_token})
@@ -169,6 +186,58 @@ def waitlist():
         print("Error:", str(e))
         sentry_sdk.capture_exception(e)
         return Response(status=500, response="An unexpected error occurred")
+
+
+# @app.route("/voice", methods=["GET", "POST"])
+# def voice():
+#     sender_number = request.values["From"]
+#     twilio_number = request.values["To"]
+
+#     # Create a VoiceResponse object
+#     response = VoiceResponse()
+
+#     response.play(
+#         "https://rdlrwjmixecxtaqxvxne.supabase.co/storage/v1/object/public/voicemail%20recordings/firstwavetest.wav"
+#     )
+#     response.say(
+#         "Hello, this is a test voicemail. Please leave a message after the beep."
+#     )
+
+#     response.record(
+#         action="/handle-recording",  # URL to handle the recorded voicemail
+#         maxLength="60",  # Maximum length of the voicemail in seconds
+#         transcribe="true",  # Enable transcription of the voicemail
+#         transcribeCallback="/handle-transcription",  # URL to handle transcription callback
+#         # recording_status_callback=
+#     )
+
+#     return str(response)
+
+
+# @app.route("/handle-recording", methods=["POST"])
+# def handle_recording():
+#     # You can handle the recorded voicemail here, e.g., save it to a database or file
+#     recording_url = request.form["RecordingUrl"]
+#     recording_duration = request.form["RecordingDuration"]
+#     print(f"Recorded Voicemail URL: {recording_url}")
+
+#     # Make a request to the recording URL to download the recording
+#     response = requests.get(recording_url)
+#     print(response)
+#     with open("voicemail.wav", "wb") as f:
+#         f.write(response.content)
+
+#     return "", 204
+
+
+# @app.route("/handle-transcription", methods=["POST"])
+# def handle_transcription():
+#     # You can handle the transcription of the voicemail here
+#     transcription_text = request.form["TranscriptionText"]
+#     print(f"Transcription: {transcription_text}")
+
+#     # Add your own logic to handle the transcription data
+#     return "", 204
 
 
 if __name__ == "__main__":

@@ -64,6 +64,5 @@ VALUES
     'protection measures to control the future emergence of pests on your property. Continued visits ' ||
     'to evaluate the efficiency of our treatment methods and adjustments to current methods if needed. ' ||
     'Facilities We Service: Apartment Complexes, Office Buildings, Hotels, Restaurants, Healthcare ' ||
-    'Facilities, Dealerships, Storage Facilities, And More!',
-    'eyJraWQiOiI4NzYyZjU5OGQwNTk0NGRiODZiZjVjYTk3ODA0NzYwOCIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJhdWQiOiJodHRwczovL3BsYXRmb3JtLnJpbmdjZW50cmFsLmNvbS9yZXN0YXBpL29hdXRoL3Rva2VuIiwic3ViIjoiNzkxMjQyMDQ4IiwiaXNzIjoiaHR0cHM6Ly9wbGF0Zm9ybS5yaW5nY2VudHJhbC5jb20iLCJleHAiOjM4NTQyOTYyMzgsImlhdCI6MTcwNjgxMjU5MSwianRpIjoiZjVsc0RUQ2ZSeW15RUlhOC1WemZmQSJ9.ZE4M-j4LFHV4uF7mowV9OS9LmkwRoEqDmJUposi1WPnujzVEPx6iQCHKeG_fOOd0Hxo6MGvLB7A4MMYOkgnTV4qv1d_-WYvOuizEuHLIzxfPYdv0CRLrztBxOpahNPlpcWPB19uM1gnReCzJ_p70Z4in8AfaEyM7pz-FbQPiYRSf-GMgCvFukQusuqy6ElhruY4l3gKf48eLq6OU0_aLObGzw3L491JyFv8LqwxU7TzsVNA9t32K_QIOaZS6YZ4xQB7JbRWVVweJBTmZjnuzJU5CYT7WRZ9jnj_cM56ReWFz6q_QDTUVrzoqVgvh1jEkQ3clTraBvfTacHtD8AlMag'
+    'Facilities, Dealerships, Storage Facilities, And More!'
 );
