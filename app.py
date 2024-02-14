@@ -120,26 +120,25 @@ async def greeting():
         twilio_number = request.values["To"]
 
         if not check_company_hours(twilio_number):
-            print("within company hours")
             response = VoiceResponse()
             return str(response)
 
         await missed_call_logic(twilio_number, sender_number)
         response = VoiceResponse()
 
-        response.play(
-            "https://rdlrwjmixecxtaqxvxne.supabase.co/storage/v1/object/public/voicemail%20recordings/firstwavetest.wav"
-        )
-        response.say("Please leave a message after the beep.")
+        # response.play(
+        #     "https://rdlrwjmixecxtaqxvxne.supabase.co/storage/v1/object/public/voicemail%20recordings/firstwavetest.wav"
+        # )
+        # response.say("Please leave a message after the beep.")
 
-        response.record(
-            action="/handle-recording",  # URL to handle the recorded voicemail
-            maxLength="60",  # Maximum length of the voicemail in seconds
-            # transcribe="true",  # Enable transcription of the voicemail
-            # transcribeCallback="/handle-transcription",  # URL to handle transcription callback
-            # recording_status_callback="/handle-voicemail-download",
-            # recording_status_callback_event="completed",
-        )
+        # response.record(
+        #     action="/handle-recording",  # URL to handle the recorded voicemail
+        #     maxLength="60",  # Maximum length of the voicemail in seconds
+        #     # transcribe="true",  # Enable transcription of the voicemail
+        #     # transcribeCallback="/handle-transcription",  # URL to handle transcription callback
+        #     # recording_status_callback="/handle-voicemail-download",
+        #     # recording_status_callback_event="completed",
+        # )
 
         return str(response)
     except Exception as e:

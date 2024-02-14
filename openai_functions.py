@@ -93,9 +93,7 @@ def pass_customer_to_representative(
     """
 
     send_lead_to_sales_team(
-        # body, ["talmage@textrover.co", "conner@textrover.co", "sales@bannerpc.com"]
-        body,
-        ["conner@textrover.co"],
+        body, ["talmage@textrover.co", "conner@textrover.co", "sales@bannerpc.com"]
     )
     return json.dumps({"result": "Customer passed to representative"})
 
