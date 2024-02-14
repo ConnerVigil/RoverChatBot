@@ -15,7 +15,6 @@ def get_current_date_and_time(company_time_zone: str) -> str:
     Returns:
         str: The current date and time
     """
-    print(f"Company Time Zone: {company_time_zone}")
     utc_now = datetime.utcnow()
     company_timezone = pytz.timezone(company_time_zone)
     current_date_time = utc_now.replace(tzinfo=pytz.utc).astimezone(company_timezone)
@@ -47,6 +46,7 @@ def pass_customer_to_representative(
     email: str,
     callback_times: str,
     summary_of_interation: str,
+    company_time_zone: str,
 ) -> str:
     """
     Passes the customer to a representative by email
@@ -61,16 +61,29 @@ def pass_customer_to_representative(
     Returns:
         str: A string confirming that the customer was passed to the representative
     """
-    phone_number = ""
+    phone_number = "No phone number information"
+    missed_call_time = "No missed call information"
     user_result = get_user_by_email(email)
 
     if len(user_result.data) == 1:
         phone_number = user_result.data[0]["phone_number"]
+        missed_call_result = get_missed_call_by_phone_number(phone_number)
+        if len(missed_call_result.data) == 1:
+            missed_call_time = missed_call_result.data[0]["created_at"]
+
+            date_time_object = datetime.fromisoformat(missed_call_time)
+            company_time_zone_obj = pytz.timezone(company_time_zone)
+            date_time_in_tz = date_time_object.replace(tzinfo=pytz.utc).astimezone(
+                company_time_zone_obj
+            )
+            formatted_time = date_time_in_tz.strftime("%m/%d/%Y %I:%M %p")
 
     body = f"""
     Name: {first_name} {last_name}
 
     Phone Number: {phone_number}
+
+    Missed Call Time: {formatted_time} {company_time_zone}
 
     Email: {email}
 
@@ -80,29 +93,31 @@ def pass_customer_to_representative(
     """
 
     send_lead_to_sales_team(
-        body, ["talmage@textrover.co", "conner@textrover.co", "sales@bannerpc.com"]
+        # body, ["talmage@textrover.co", "conner@textrover.co", "sales@bannerpc.com"]
+        body,
+        ["conner@textrover.co"],
     )
     return json.dumps({"result": "Customer passed to representative"})
 
 
 tools = [
-    {
-        "type": "function",
-        "function": {
-            "name": "get_current_date_and_time",
-            "description": "Get the current date and time",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "company_time_zone": {
-                        "type": "string",
-                        "description": "The time zone of the company. For example, 'US/Pacific' or 'US/Eastern'",
-                    },
-                },
-                "required": ["company_time_zone"],
-            },
-        },
-    },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "get_current_date_and_time",
+    #         "description": "Get the current date and time",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "company_time_zone": {
+    #                     "type": "string",
+    #                     "description": "The time zone of the company. For example, 'US/Pacific' or 'US/Eastern'",
+    #                 },
+    #             },
+    #             "required": ["company_time_zone"],
+    #         },
+    #     },
+    # },
     {
         "type": "function",
         "function": {
@@ -156,18 +171,29 @@ tools = [
                         "type": "string",
                         "description": "A summary of the interaction with the customer",
                     },
+                    "company_time_zone": {
+                        "type": "string",
+                        "description": "The time zone of the company. For example, 'US/Pacific' or 'US/Eastern'",
+                    },
                 },
-                "required": ["first_name", "last_name", "email", "callback_times"],
+                "required": [
+                    "first_name",
+                    "last_name",
+                    "email",
+                    "callback_times",
+                    "summary_of_interation",
+                    "company_time_zone",
+                ],
             },
         },
     },
 ]
 
 available_functions = {
-    "get_current_date_and_time": {
-        "function": get_current_date_and_time,
-        "parameters": ["company_time_zone"],
-    },
+    # "get_current_date_and_time": {
+    #     "function": get_current_date_and_time,
+    #     "parameters": ["company_time_zone"],
+    # },
     "save_customers_personal_information": {
         "function": save_customers_personal_information,
         "parameters": ["first_name", "last_name", "email"],
@@ -180,6 +206,7 @@ available_functions = {
             "email",
             "callback_times",
             "summary_of_interation",
+            "company_time_zone",
         ],
     },
 }

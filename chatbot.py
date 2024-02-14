@@ -1,6 +1,6 @@
 import json
 import time
-from datetime import time as time2, timedelta
+from datetime import timedelta
 from exceptions import NewMessagesReceived
 from termcolor import colored
 from openai_functions import tools, available_functions
@@ -342,15 +342,19 @@ def check_company_hours(twilio_number: str):
         company = company_result.data[0]
         open_time_str = company["open_time_utc"]
         close_time_str = company["close_time_utc"]
-        
-        open_time_timetz = datetime.strptime(open_time_str, '%H:%M:%S').time()
-        close_time_timetz = datetime.strptime(close_time_str, '%H:%M:%S').time()
+
+        open_time_timetz = datetime.strptime(open_time_str, "%H:%M:%S").time()
+        close_time_timetz = datetime.strptime(close_time_str, "%H:%M:%S").time()
 
         current_datetime_utc = datetime.utcnow().replace(tzinfo=timezone.utc)
         open_datetime = datetime.combine(current_datetime_utc.date(), open_time_timetz)
-        close_datetime = datetime.combine(current_datetime_utc.date(), close_time_timetz)
+        close_datetime = datetime.combine(
+            current_datetime_utc.date(), close_time_timetz
+        )
 
-        current_datetime_naive = current_datetime_utc.astimezone(timezone.utc).replace(tzinfo=None)
+        current_datetime_naive = current_datetime_utc.astimezone(timezone.utc).replace(
+            tzinfo=None
+        )
 
         if open_datetime > close_datetime:
             close_datetime = close_datetime + timedelta(days=1)

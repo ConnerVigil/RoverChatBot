@@ -275,62 +275,6 @@ def check_if_conversation_is_active(conversation_id: str) -> bool:
         return False
 
 
-def insert_into_conversation_queue(conversation_id: str):
-    """
-    Insert a conversation into the conversation queue
-
-    Args:
-        conversation_id (str): The id of the conversation
-
-    Returns:
-        _type_: The result of the query
-    """
-    res = (
-        supabase.table("Conversation_Queue")
-        .insert({"conversation_id": conversation_id})
-        .execute()
-    )
-    return res
-
-
-def get_conversation_from_queue(conversation_id: str):
-    """
-    Get a conversation from the conversation queue
-
-    Args:
-        conversation_id (str): The id of the conversation
-
-    Returns:
-        _type_: The result of the query
-    """
-    res = (
-        supabase.table("Conversation_Queue")
-        .select("*")
-        .eq("id", conversation_id)
-        .execute()
-    )
-    return res
-
-
-def remove_conversation_from_queue(conversation_id: str):
-    """
-    Removes a conversation from the conversation queue
-
-    Args:
-        conversation_id (str): The id of the conversation
-
-    Returns:
-        _type_: The result of the query
-    """
-    res = (
-        supabase.table("Conversation_Queue")
-        .delete()
-        .eq("conversation_id", conversation_id)
-        .execute()
-    )
-    return res
-
-
 def insert_into_waitlist(first_name: str, last_name: str, email: str):
     """
     Insert a user into the waitlist
@@ -374,6 +318,27 @@ def insert_into_missed_calls(
                 "conversation_id": conversation_id,
             }
         )
+        .execute()
+    )
+    return res
+
+
+def get_missed_call_by_phone_number(phone_number: str):
+    """
+    Get a missed call by phone number from the database
+
+    Args:
+        phone_number (str): The phone number of the missed call
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Missed_Calls")
+        .select("*")
+        .eq("from_phone_number", phone_number)
+        .order("created_at")
+        .limit(1)
         .execute()
     )
     return res
