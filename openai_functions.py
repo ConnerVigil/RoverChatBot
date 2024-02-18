@@ -67,31 +67,34 @@ def pass_customer_to_representative(
     phone_number = ""
     user_result = get_user_by_email(email)
 
-    if len(user_result.data) == 1:
-        phone_number = user_result.data[0]["phone_number"]
-        missed_call_result = get_missed_call_by_phone_number(phone_number)
-        if len(missed_call_result.data) == 1:
-            missed_call_time = missed_call_result.data[0]["created_at"]
+    company_result = get_company_by_id(user_result.data[0]["company_id"])
+    company_name = company_result.data[0]["name"]
 
-            date_time_object = datetime.fromisoformat(missed_call_time)
-            company_time_zone_obj = pytz.timezone(company_time_zone)
-            date_time_in_tz = date_time_object.replace(tzinfo=pytz.utc).astimezone(
-                company_time_zone_obj
-            )
-            formatted_time = date_time_in_tz.strftime("%m/%d/%Y %I:%M %p")
+    phone_number = user_result.data[0]["phone_number"]
+    missed_call_result = get_missed_call_by_phone_number(phone_number)
+    if len(missed_call_result.data) == 1:
+        missed_call_time = missed_call_result.data[0]["created_at"]
+
+        date_time_object = datetime.fromisoformat(missed_call_time)
+        company_time_zone_obj = pytz.timezone(company_time_zone)
+        date_time_in_tz = date_time_object.replace(tzinfo=pytz.utc).astimezone(
+            company_time_zone_obj
+        )
+        formatted_time = date_time_in_tz.strftime("%m/%d/%Y %I:%M %p")
 
     body = f"""
-    Name: {first_name} {last_name}
-
-    Phone Number: {phone_number}
-
-    Missed Call Time: {formatted_time} {company_time_zone}
-
-    Email: {email}
-
-    Callback Times: {callback_times}
-
-    Summary of Interaction: {summary_of_interation}
+    <html>
+        <body>
+            <p><strong>Company Name:</strong> {company_name}</p>
+            <p><strong>Customer Name:</strong> {first_name} {last_name}</p>
+            <p><strong>Phone Number:</strong> {phone_number}</p>
+            <p><strong>Missed Call Time:</strong> {formatted_time} {company_time_zone}</p>
+            <p><strong>Email:</strong> {email}</p>
+            <p><strong>Customer status:</strong> {customer_status}</p>
+            <p><strong>Callback Times:</strong> {callback_times}</p>
+            <p><strong>Summary of Interaction:</strong> {summary_of_interation}</p>
+        </body>
+    </html>
     """
 
     recipients = ["talmage@textrover.co", "conner@textrover.co"]

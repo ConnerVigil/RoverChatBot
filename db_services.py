@@ -325,7 +325,7 @@ def insert_into_missed_calls(
 
 def get_missed_call_by_phone_number(phone_number: str):
     """
-    Get a missed call by phone number from the database
+    Get the most recent missed call by phone number from the database
 
     Args:
         phone_number (str): The phone number of the missed call
