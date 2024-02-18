@@ -22,7 +22,14 @@ sentry_sdk.init(
 )
 
 app = Flask(__name__)
-CORS(app, origins=["https://rover-landing-page.vercel.app", "http://localhost:3000"])
+CORS(
+    app,
+    origins=[
+        "https://rover-landing-page.vercel.app",
+        "http://localhost:3000",
+        "https://www.textrover.co",
+    ],
+)
 
 TWILIO_NUMBER = "+13134258270"
 
@@ -126,20 +133,6 @@ async def greeting():
         await missed_call_logic(twilio_number, sender_number)
         response = VoiceResponse()
 
-        # response.play(
-        #     "https://rdlrwjmixecxtaqxvxne.supabase.co/storage/v1/object/public/voicemail%20recordings/firstwavetest.wav"
-        # )
-        # response.say("Please leave a message after the beep.")
-
-        # response.record(
-        #     action="/handle-recording",  # URL to handle the recorded voicemail
-        #     maxLength="60",  # Maximum length of the voicemail in seconds
-        #     # transcribe="true",  # Enable transcription of the voicemail
-        #     # transcribeCallback="/handle-transcription",  # URL to handle transcription callback
-        #     # recording_status_callback="/handle-voicemail-download",
-        #     # recording_status_callback_event="completed",
-        # )
-
         return str(response)
     except Exception as e:
         sentry_sdk.capture_exception(e)
@@ -208,21 +201,14 @@ def waitlist():
 # def voice():
 #     sender_number = request.values["From"]
 #     twilio_number = request.values["To"]
-
 #     response = VoiceResponse()
-
-#     response.play(
-#         "https://rdlrwjmixecxtaqxvxne.supabase.co/storage/v1/object/public/voicemail%20recordings/firstwavetest.wav"
-#     )
 #     response.say("Please leave a message after the beep.")
 
 #     response.record(
 #         action="/handle-recording",  # URL to handle the recorded voicemail
 #         maxLength="60",  # Maximum length of the voicemail in seconds
-#         # transcribe="true",  # Enable transcription of the voicemail
-#         # transcribeCallback="/handle-transcription",  # URL to handle transcription callback
-#         # recording_status_callback="/handle-voicemail-download",
-#         # recording_status_callback_event="completed",
+#         recording_status_callback="/handle-voicemail-download",
+#         recording_status_callback_event="completed",
 #     )
 
 #     return str(response)
@@ -236,14 +222,11 @@ def waitlist():
 #     print(f"Recorded Voicemail URL: {recording_url}")
 #     print(f"Recorded Voicemail Duration: {recording_duration}")
 
-#     # Make a request to the recording URL to download the recording
 #     try:
-#         # Use Twilio client to download the voicemail recording
 #         response = twilio_client.http_client.request("GET", recording_url)
-        
-#         # Check if the request was successful (status code 200)
+#         print(response)
+
 #         if response.status_code == 200:
-#             # Save the recording to a file or process it as needed
 #             with open("downloaded_recording.mp3", "wb") as f:
 #                 f.write(response.content)
 #             print("Voicemail downloaded successfully.")
@@ -260,24 +243,23 @@ def waitlist():
 # def handle_voicemail_download():
 #     recording_status = request.form["RecordingStatus"]
 #     recording_url = request.form["RecordingUrl"]
-
 #     print(f"Recording Status: {recording_status}")
 #     print(f"Recording URL: {recording_url}")
 
-#     response = requests.get(recording_url)
-#     print(response)
-#     print(response.content)
+#     try:
+#         response = twilio_client.http_client.request("GET", recording_url)
+#         print(response)
 
-#     return "", 204
+#         if response.status_code == 200:
+#             with open("downloaded_recording.mp3", "wb") as f:
+#                 f.write(response.content)
+#             print("Voicemail downloaded successfully.")
+#         else:
+#             print(f"Failed to download voicemail. Status code: {response.status_code}")
 
+#     except Exception as e:
+#         print(f"Error: {str(e)}")
 
-# @app.route("/handle-transcription", methods=["POST"])
-# def handle_transcription():
-#     # You can handle the transcription of the voicemail here
-#     transcription_text = request.form["TranscriptionText"]
-#     print(f"Transcription: {transcription_text}")
-
-#     # Add your own logic to handle the transcription data
 #     return "", 204
 
 

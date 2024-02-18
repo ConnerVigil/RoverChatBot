@@ -45,6 +45,7 @@ def pass_customer_to_representative(
     last_name: str,
     email: str,
     callback_times: str,
+    customer_status: str,
     summary_of_interation: str,
     company_time_zone: str,
 ) -> str:
@@ -61,8 +62,9 @@ def pass_customer_to_representative(
     Returns:
         str: A string confirming that the customer was passed to the representative
     """
-    phone_number = "No phone number information"
+    formatted_time = "No phone number information"
     missed_call_time = "No missed call information"
+    phone_number = ""
     user_result = get_user_by_email(email)
 
     if len(user_result.data) == 1:
@@ -92,9 +94,14 @@ def pass_customer_to_representative(
     Summary of Interaction: {summary_of_interation}
     """
 
-    send_lead_to_sales_team(
-        body, ["talmage@textrover.co", "conner@textrover.co", "sales@bannerpc.com"]
-    )
+    recipients = ["talmage@textrover.co", "conner@textrover.co"]
+
+    if customer_status == "new":
+        recipients.append("sales@bannerpc.com")
+    else:
+        recipients.append("service@bannerpc.com")
+
+    send_lead_to_sales_team(body, recipients)
     return json.dumps({"result": "Customer passed to representative"})
 
 
@@ -165,6 +172,10 @@ tools = [
                         "type": "string",
                         "description": "A list of times the representative can call the customer",
                     },
+                    "customer_status": {
+                        "type": "string",
+                        "description": "The status of the customer, either 'new' or 'existing'",
+                    },
                     "summary_of_interation": {
                         "type": "string",
                         "description": "A summary of the interaction with the customer",
@@ -179,6 +190,7 @@ tools = [
                     "last_name",
                     "email",
                     "callback_times",
+                    "customer_status",
                     "summary_of_interation",
                     "company_time_zone",
                 ],
@@ -203,6 +215,7 @@ available_functions = {
             "last_name",
             "email",
             "callback_times",
+            "customer_status",
             "summary_of_interation",
             "company_time_zone",
         ],
