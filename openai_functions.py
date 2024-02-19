@@ -22,7 +22,7 @@ def get_current_date_and_time(company_time_zone: str) -> str:
 
 
 def save_customers_personal_information(
-    phone_number: str, first_name: str = None, last_name: str = None, email: str = None
+    phone_number: str, first_name: str, last_name: str, email: str
 ):
     """
     Saves the customer's personal information to the database
@@ -147,7 +147,7 @@ tools = [
                         "description": "The customer's email",
                     },
                 },
-                "required": [],
+                "required": ["first_name", "last_name", "email"],
             },
         },
     },

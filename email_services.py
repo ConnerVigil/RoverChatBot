@@ -17,7 +17,9 @@ def send_lead_to_sales_team(body: str, recipients: list[str]):
     """
     subject = "New Lead from Rover AI"
     sender = "conner@textrover.co"
-    send_email(subject=subject, body=body, sender=sender, recipients=recipients, is_html=True)
+    send_email(
+        subject=subject, body=body, sender=sender, recipients=recipients, is_html=True
+    )
 
 
 def send_email(
