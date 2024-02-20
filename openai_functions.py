@@ -65,10 +65,12 @@ def pass_customer_to_representative(
     formatted_time = "No phone number information"
     missed_call_time = "No missed call information"
     phone_number = ""
+    company_name = ""
     user_result = get_user_by_email(email)
 
     company_result = get_company_by_id(user_result.data[0]["company_id"])
-    company_name = company_result.data[0]["name"]
+    company = company_result.data[0]
+    company_name = company["name"]
 
     phone_number = user_result.data[0]["phone_number"]
     missed_call_result = get_missed_call_by_phone_number(phone_number)
@@ -98,12 +100,14 @@ def pass_customer_to_representative(
     """
 
     recipients = ["talmage@textrover.co", "conner@textrover.co"]
-
+    addresses = []
+    
     if customer_status == "new":
-        recipients.append("sales@bannerpc.com")
+        addresses = company["email_addresses_new"]
     else:
-        recipients.append("service@bannerpc.com")
+        addresses = company["email_addresses_existing"]
 
+    recipients.append(addresses)
     send_lead_to_sales_team(body, recipients)
     return json.dumps({"result": "Customer passed to representative"})
 
