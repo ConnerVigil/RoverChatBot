@@ -342,3 +342,21 @@ def get_missed_call_by_phone_number(phone_number: str):
         .execute()
     )
     return res
+
+
+def upload_file_to_bucket(bucket_name: str, file_path: str, file_name: str):
+    """
+    Upload a file to a bucket in Supabase
+
+    Args:
+        bucket_name (str): The name of the bucket
+        file_path (str): The path to the file
+        file_name (str): The name of the file in the bucket
+    """
+    with open(file_path, "rb") as file:
+        response = supabase.storage.from_(bucket_name).upload(file_name, file)
+
+        if response.status_code != 200:
+            print(f"Failed to upload file: {response.content}")
+        else:
+            print(f"File uploaded successfully: {response.content}")

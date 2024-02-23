@@ -1,8 +1,12 @@
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 import json
 from db_services import *
 from email_services import send_lead_to_sales_team
 import pytz
+
+load_dotenv()
 
 
 def get_current_date_and_time(company_time_zone: str) -> str:
@@ -84,6 +88,15 @@ def pass_customer_to_representative(
         )
         formatted_time = date_time_in_tz.strftime("%m/%d/%Y %I:%M %p")
 
+    # Retrieve voicemail details from Supabase
+    voicemail_result = get_voicemail_by_phone_number(phone_number)
+    if len(voicemail_result.data) == 1:
+        voicemail_filename = voicemail_result.data[0]["filename"]
+        voicemail_link = f"https://your-supabase-storage-url/{voicemail_filename}"
+        audio_player = (
+            f"<audio controls><source src='{voicemail_link}' type='audio/wav'></audio>"
+        )
+
     body = f"""
     <html>
         <body>
@@ -95,17 +108,20 @@ def pass_customer_to_representative(
             <p><strong>Customer status:</strong> {customer_status}</p>
             <p><strong>Callback Times:</strong> {callback_times}</p>
             <p><strong>Summary of Interaction:</strong> {summary_of_interation}</p>
+            <p><strong>Voicemail Link:</strong> <a href='{voicemail_link}'>Listen to voicemail</a></p>
+            <p><strong>Voicemail Player:</strong> {audio_player}</p>
         </body>
     </html>
     """
 
     recipients = ["talmage@textrover.co", "conner@textrover.co"]
     addresses = []
-    
-    if customer_status == "new":
-        addresses = company["email_addresses_new"]
-    else:
-        addresses = company["email_addresses_existing"]
+
+    if os.getenv("SENTRY_ENVIRONMENT") == "production":
+        if customer_status == "new":
+            addresses = company["email_addresses_new"]
+        else:
+            addresses = company["email_addresses_existing"]
 
     recipients.append(addresses)
     send_lead_to_sales_team(body, recipients)
