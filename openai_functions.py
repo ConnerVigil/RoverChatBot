@@ -101,13 +101,13 @@ def pass_customer_to_representative(
 
     recipients = ["talmage@textrover.co", "conner@textrover.co"]
     addresses = []
-    
+
     if customer_status == "new":
         addresses = company["email_addresses_new"]
     else:
         addresses = company["email_addresses_existing"]
 
-    recipients.append(addresses)
+    recipients.extend(addresses)
     send_lead_to_sales_team(body, recipients)
     return json.dumps({"result": "Customer passed to representative"})
 
