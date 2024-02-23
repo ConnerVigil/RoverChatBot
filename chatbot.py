@@ -343,6 +343,9 @@ def check_company_hours(twilio_number: str):
         open_time_str = company["open_time_utc"]
         close_time_str = company["close_time_utc"]
 
+        if open_time_str == None or close_time_str == None:
+            return True
+
         open_time_timetz = datetime.strptime(open_time_str, "%H:%M:%S").time()
         close_time_timetz = datetime.strptime(close_time_str, "%H:%M:%S").time()
 
