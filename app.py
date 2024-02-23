@@ -10,7 +10,7 @@ from flask_cors import CORS
 import sentry_sdk
 import os
 from dotenv import load_dotenv
-from clients import twilio_client
+from db_services import get_company_by_phone_number
 
 load_dotenv()
 
@@ -31,7 +31,8 @@ CORS(
     ],
 )
 
-TWILIO_NUMBER = "+13134258270"
+TWILIO_NUMBER_TEST = "+13134258270"
+TWILIO_NUMBER_BANNERPC = "+16503003890"
 
 
 @app.route("/bot", methods=["POST"])
@@ -131,7 +132,12 @@ async def greeting():
             return str(response)
 
         await missed_call_logic(twilio_number, sender_number)
+
+        company_result = get_company_by_phone_number(twilio_number)
+        company_name = company_result.data[0]["name"]
+
         response = VoiceResponse()
+        response.say(f"Thanks for calling {company_name}.")
 
         return str(response)
     except Exception as e:
@@ -142,7 +148,7 @@ async def greeting():
 
 @app.route("/missedCall", methods=["POST"])
 async def missedCall():
-    """An endpoint for the RingCentral webhook to hit when there is a missed call
+    """An endpoint for the RingCentral webhook to hit when there is a missed call FOR BANNERPC
 
     Returns:
         _type_: A response object
@@ -156,7 +162,7 @@ async def missedCall():
 
         request_json = json.loads(request.data.decode("utf-8"))
         to_phone_number = request_json["body"]["parties"][0]["to"]["phoneNumber"]
-        to_phone_number = TWILIO_NUMBER  # TEMPORARY FIX FOR TODAY
+        to_phone_number = TWILIO_NUMBER_BANNERPC  # TEMPORARY FIX FOR BANNERPC
         from_phone_number = request_json["body"]["parties"][0]["from"]["phoneNumber"]
 
         if not check_company_hours(to_phone_number):
@@ -197,41 +203,52 @@ def waitlist():
         return Response(status=500, response="An unexpected error occurred")
 
 
+# https://guarded-fjord-24910-40caeb8e0ba2.herokuapp.com/greeting
+
+
 # @app.route("/voice", methods=["GET", "POST"])
 # def voice():
 #     sender_number = request.values["From"]
 #     twilio_number = request.values["To"]
+
+#     company = get_company_by_phone_number(twilio_number)
+#     company_name = company["name"]
+
 #     response = VoiceResponse()
-#     response.say("Please leave a message after the beep.")
+#     response.say(
+#         f"Thanks for calling {company_name}. Please leave a message after the beep."
+#     )
 
 #     response.record(
-#         action="/handle-recording",  # URL to handle the recorded voicemail
-#         maxLength="60",  # Maximum length of the voicemail in seconds
+#         maxLength="60",
 #         recording_status_callback="/handle-voicemail-download",
 #         recording_status_callback_event="completed",
+#         transcribe_callback="/handle-transcription",
 #     )
 
 #     return str(response)
 
 
-# @app.route("/handle-recording", methods=["POST"])
-# def handle_recording():
-#     # You can handle the recorded voicemail here, e.g., save it to a database or file
+# @app.route("/handle-voicemail-download", methods=["POST"])
+# def handle_voicemail_download():
 #     recording_url = request.form["RecordingUrl"]
-#     recording_duration = request.form["RecordingDuration"]
-#     print(f"Recorded Voicemail URL: {recording_url}")
-#     print(f"Recorded Voicemail Duration: {recording_duration}")
+#     recording_sid = request.form["RecordingSid"]
+#     call_sid = request.form["CallSid"]
 
 #     try:
-#         response = twilio_client.http_client.request("GET", recording_url)
-#         print(response)
+#         response = requests.get(recording_url)
 
 #         if response.status_code == 200:
-#             with open("downloaded_recording.mp3", "wb") as f:
+#             filename = f"{recording_sid}.wav"
+
+#             with open(filename, "wb") as f:
 #                 f.write(response.content)
-#             print("Voicemail downloaded successfully.")
+#                 print(f"Recording downloaded successfully. Saved as {filename}")
+
+#             upload_file_to_bucket("voicemail-recordings", filepath, filename)
+
 #         else:
-#             print(f"Failed to download voicemail. Status code: {response.status_code}")
+#             print(f"Failed to download recording. Status code: {response.status_code}")
 
 #     except Exception as e:
 #         print(f"Error: {str(e)}")
@@ -239,26 +256,21 @@ def waitlist():
 #     return "", 204
 
 
-# @app.route("/handle-voicemail-download", methods=["POST"])
-# def handle_voicemail_download():
-#     recording_status = request.form["RecordingStatus"]
+# @app.route("/handle-transcription", methods=["POST"])
+# def handle_transcription():
+#     sender_number = request.values["From"]
+#     twilio_number = request.values["To"]
+#     transcription_sid = request.form["TranscriptionSid"]
+#     transcription_text = request.form["TranscriptionText"]
+#     transcription_status = request.form["TranscriptionStatus"]
+#     transcription_url = request.form["TranscriptionUrl"]
+#     recording_sid = request.form["RecordingSid"]
 #     recording_url = request.form["RecordingUrl"]
-#     print(f"Recording Status: {recording_status}")
-#     print(f"Recording URL: {recording_url}")
+#     call_sid = request.form["CallSid"]
 
-#     try:
-#         response = twilio_client.http_client.request("GET", recording_url)
-#         print(response)
+#     print(f"Transcription: {transcription_text}")
 
-#         if response.status_code == 200:
-#             with open("downloaded_recording.mp3", "wb") as f:
-#                 f.write(response.content)
-#             print("Voicemail downloaded successfully.")
-#         else:
-#             print(f"Failed to download voicemail. Status code: {response.status_code}")
-
-#     except Exception as e:
-#         print(f"Error: {str(e)}")
+#     # Add your own logic to handle the transcription data
 
 #     return "", 204
 
