@@ -1,5 +1,5 @@
 INSERT INTO "public"."Companies" 
-("id", "created_at", "name", "phone_number", "context", "JWT") 
+("id", "created_at", "name", "phone_number", "context") 
 VALUES 
 (
     gen_random_uuid(),

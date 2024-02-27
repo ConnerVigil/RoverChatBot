@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 SECONDS_FOR_CONVERSATION_TO_BE_INACTIVE = 1 * 24 * 60 * 60
 
 
-def get_user_by_phone_number(phone_number: str):
+def get_user_by_phone_number(phone_number: str, company_id: str):
     """
     Get a user by phone number from the database
 
@@ -14,7 +14,13 @@ def get_user_by_phone_number(phone_number: str):
     Returns:
         _type_: The result of the query
     """
-    res = supabase.table("Users").select("*").eq("phone_number", phone_number).execute()
+    res = (
+        supabase.table("Users")
+        .select("*")
+        .eq("phone_number", phone_number)
+        .eq("company_id", company_id)
+        .execute()
+    )
     return res
 
 

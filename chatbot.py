@@ -211,7 +211,7 @@ def get_user_if_exists_or_create_new_user(phone_number: str, company_id: str = N
     Returns:
         _type_: The user object
     """
-    user_result = get_user_by_phone_number(phone_number)
+    user_result = get_user_by_phone_number(phone_number, company_id)
     if not user_result.data:
         user_insert_result = insert_user(phone_number, company_id)
         user = user_insert_result.data[0]
@@ -342,6 +342,9 @@ def check_company_hours(twilio_number: str):
         company = company_result.data[0]
         open_time_str = company["open_time_utc"]
         close_time_str = company["close_time_utc"]
+
+        if open_time_str == None or close_time_str == None:
+            return True
 
         open_time_timetz = datetime.strptime(open_time_str, "%H:%M:%S").time()
         close_time_timetz = datetime.strptime(close_time_str, "%H:%M:%S").time()

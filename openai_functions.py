@@ -117,13 +117,20 @@ def pass_customer_to_representative(
     recipients = ["talmage@textrover.co", "conner@textrover.co"]
     addresses = []
 
+<<<<<<< HEAD
     if os.getenv("SENTRY_ENVIRONMENT") == "production":
         if customer_status == "new":
             addresses = company["email_addresses_new"]
         else:
             addresses = company["email_addresses_existing"]
+=======
+    if customer_status == "new":
+        addresses = company["email_addresses_new"]
+    else:
+        addresses = company["email_addresses_existing"]
+>>>>>>> main
 
-    recipients.append(addresses)
+    recipients.extend(addresses)
     send_lead_to_sales_team(body, recipients)
     return json.dumps({"result": "Customer passed to representative"})
 
