@@ -114,8 +114,8 @@ def backup():
         return jsonify(error="Internal Server Error"), 500
 
 
-@app.route("/greeting", methods=["GET"])
-async def greeting():
+@app.route("/voice", methods=["GET", "POST"])
+async def voice():
     """
     An endpoint for a webhooks to hit when there is a missed call
     to the Twilio number, thus initiating the conversation
@@ -126,24 +126,85 @@ async def greeting():
     try:
         sender_number = request.values["From"]
         twilio_number = request.values["To"]
+        call_sid = request.values["CallSid"]
+        company_name = ""
 
         if not check_company_hours(twilio_number):
             response = VoiceResponse()
             return str(response)
 
-        await missed_call_logic(twilio_number, sender_number)
-
         company_result = get_company_by_phone_number(twilio_number)
-        company_name = company_result.data[0]["name"]
+        if company_result.data:
+            company_name = company_result.data[0]["name"]
 
         response = VoiceResponse()
-        response.say(f"Thanks for calling {company_name}.")
+        response.say(
+            f"Thanks for calling {company_name}. Please leave a message after the beep."
+        )
+
+        response.record(
+            maxLength="60",
+            recording_status_callback="/handle-voicemail-download",
+            recording_status_callback_event="completed",
+            # transcribe_callback="/handle-transcription",
+        )
+
+        if request.method == "POST":
+            await missed_call_logic(twilio_number, sender_number, call_sid)
 
         return str(response)
     except Exception as e:
         sentry_sdk.capture_exception(e)
         print(f"Unexpected error: {e}")
         return jsonify(error="Internal Server Error"), 500
+
+
+# https://guarded-fjord-24910-40caeb8e0ba2.herokuapp.com/voice
+
+
+@app.route("/handle-voicemail-download", methods=["POST"])
+def handle_voicemail_download():
+    recording_url_twilio = request.form["RecordingUrl"]
+    recording_sid = request.form["RecordingSid"]
+    call_sid = request.form["CallSid"]
+
+    try:
+        response = requests.get(recording_url_twilio)
+
+        if response.status_code == 200:
+            filename = f"{recording_sid}.wav"
+            recording_url_supabase = upload_to_supabase(
+                response.content, "voicemail-recordings", filename
+            )
+            add_voicemail_info_to_missed_call(
+                call_sid, recording_sid, recording_url_supabase
+            )
+        else:
+            print(f"Failed to download recording. Status code: {response.status_code}")
+
+    except Exception as e:
+        print(f"Error: {str(e)}")
+
+    return "", 204
+
+
+@app.route("/handle-transcription", methods=["POST"])
+def handle_transcription():
+    sender_number = request.values["From"]
+    twilio_number = request.values["To"]
+    transcription_sid = request.form["TranscriptionSid"]
+    transcription_text = request.form["TranscriptionText"]
+    transcription_status = request.form["TranscriptionStatus"]
+    transcription_url = request.form["TranscriptionUrl"]
+    recording_sid = request.form["RecordingSid"]
+    recording_url = request.form["RecordingUrl"]
+    call_sid = request.form["CallSid"]
+
+    print(f"Transcription: {transcription_text}")
+
+    # Add transcription to recording in database
+
+    return "", 204
 
 
 @app.route("/missedCall", methods=["POST"])
@@ -201,78 +262,6 @@ def waitlist():
         print("Error:", str(e))
         sentry_sdk.capture_exception(e)
         return Response(status=500, response="An unexpected error occurred")
-
-
-# https://guarded-fjord-24910-40caeb8e0ba2.herokuapp.com/greeting
-
-
-# @app.route("/voice", methods=["GET", "POST"])
-# def voice():
-#     sender_number = request.values["From"]
-#     twilio_number = request.values["To"]
-
-#     company = get_company_by_phone_number(twilio_number)
-#     company_name = company["name"]
-
-#     response = VoiceResponse()
-#     response.say(
-#         f"Thanks for calling {company_name}. Please leave a message after the beep."
-#     )
-
-#     response.record(
-#         maxLength="60",
-#         recording_status_callback="/handle-voicemail-download",
-#         recording_status_callback_event="completed",
-#         transcribe_callback="/handle-transcription",
-#     )
-
-#     return str(response)
-
-
-# @app.route("/handle-voicemail-download", methods=["POST"])
-# def handle_voicemail_download():
-#     recording_url = request.form["RecordingUrl"]
-#     recording_sid = request.form["RecordingSid"]
-#     call_sid = request.form["CallSid"]
-
-#     try:
-#         response = requests.get(recording_url)
-
-#         if response.status_code == 200:
-#             filename = f"{recording_sid}.wav"
-
-#             with open(filename, "wb") as f:
-#                 f.write(response.content)
-#                 print(f"Recording downloaded successfully. Saved as {filename}")
-
-#             upload_file_to_bucket("voicemail-recordings", filepath, filename)
-
-#         else:
-#             print(f"Failed to download recording. Status code: {response.status_code}")
-
-#     except Exception as e:
-#         print(f"Error: {str(e)}")
-
-#     return "", 204
-
-
-# @app.route("/handle-transcription", methods=["POST"])
-# def handle_transcription():
-#     sender_number = request.values["From"]
-#     twilio_number = request.values["To"]
-#     transcription_sid = request.form["TranscriptionSid"]
-#     transcription_text = request.form["TranscriptionText"]
-#     transcription_status = request.form["TranscriptionStatus"]
-#     transcription_url = request.form["TranscriptionUrl"]
-#     recording_sid = request.form["RecordingSid"]
-#     recording_url = request.form["RecordingUrl"]
-#     call_sid = request.form["CallSid"]
-
-#     print(f"Transcription: {transcription_text}")
-
-#     # Add your own logic to handle the transcription data
-
-#     return "", 204
 
 
 if __name__ == "__main__":

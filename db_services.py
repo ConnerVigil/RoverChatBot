@@ -1,5 +1,10 @@
 from clients import supabase
 from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()
 
 SECONDS_FOR_CONVERSATION_TO_BE_INACTIVE = 1 * 24 * 60 * 60
 
@@ -302,7 +307,10 @@ def insert_into_waitlist(first_name: str, last_name: str, email: str):
 
 
 def insert_into_missed_calls(
-    to_phone_number: str, from_phone_number: str, conversation_id: str = None
+    call_sid: str,
+    to_phone_number: str,
+    from_phone_number: str,
+    conversation_id: str = None,
 ):
     """
     Insert a missed call into the database
@@ -311,6 +319,7 @@ def insert_into_missed_calls(
         to_phone_number (str): The phone number that was called
         from_phone_number (str): The phone number that called
         conversation_id (str, optional): The id of the conversation
+        call_sid (str): The id of the call from Twilio
 
     Returns:
         _type_: The result of the query
@@ -319,11 +328,40 @@ def insert_into_missed_calls(
         supabase.table("Missed_Calls")
         .insert(
             {
+                "call_sid": call_sid,
                 "to_phone_number": to_phone_number,
                 "from_phone_number": from_phone_number,
                 "conversation_id": conversation_id,
             }
         )
+        .execute()
+    )
+    return res
+
+
+def add_voicemail_info_to_missed_call(
+    call_sid: str, recording_sid: str, recording_url: str
+):
+    """
+    Add voicemail information to the missed call in the database
+
+    Args:
+        call_sid (str): The id of the call from Twilio
+        recording_sid (str): The id of the recording from Twilio
+        recording_url (str): The url of the recording from Twilio
+
+    Returns:
+        _type_: The result of the query
+    """
+    res = (
+        supabase.table("Missed_Calls")
+        .update(
+            {
+                "recording_sid": recording_sid,
+                "recording_url": recording_url,
+            }
+        )
+        .eq("call_sid", call_sid)
         .execute()
     )
     return res
@@ -348,3 +386,65 @@ def get_missed_call_by_phone_number(phone_number: str):
         .execute()
     )
     return res
+
+
+def upload_to_supabase(file_content: bytes, bucket_name: str, file_name: str):
+    """
+    Uploads a file to supabase bucket
+
+    Args:
+        file_content (bytes): The content of the file
+        bucket_name (str): The name of the bucket
+        file_name (str): The name of the file
+    """
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_api_key = os.getenv("SUPABASE_KEY")
+
+    upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{file_name}"
+
+    headers = {
+        "Content-Type": "application/octet-stream",
+        "Authorization": f"Bearer {supabase_api_key}",
+    }
+
+    response = requests.post(upload_url, headers=headers, data=file_content)
+
+    if response.status_code == 200:
+        print(f"File {file_name} uploaded successfully to Supabase!")
+    else:
+        print(
+            f"Failed to upload file {file_name} to Supabase. Status code: {response.status_code}, Response: {response.text}"
+        )
+        upload_url = None
+
+    return upload_url
+
+
+def download_file_from_supabase(bucket_name: str, file_name: str):
+    """
+    Downloads a file from supabase bucket
+
+    Args:
+        bucket_name (str): The name of the bucket
+        file_name (str): The name of the file
+    """
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_api_key = os.getenv("SUPABASE_KEY")
+
+    download_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{file_name}.wav"
+
+    headers = {
+        "Authorization": f"Bearer {supabase_api_key}",
+    }
+
+    response = requests.get(download_url, headers=headers)
+
+    if response.status_code == 200:
+        print(f"File {file_name} downloaded successfully from Supabase!")
+    else:
+        print(
+            f"Failed to download file {file_name} from Supabase. Status code: {response.status_code}, Response: {response.text}"
+        )
+        response = None
+
+    return response.content
