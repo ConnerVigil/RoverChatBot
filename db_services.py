@@ -407,7 +407,7 @@ def upload_to_supabase(file_content: bytes, bucket_name: str, file_name: str):
         "Authorization": f"Bearer {supabase_api_key}",
     }
 
-    response = requests.post(upload_url, headers=headers, data=file_content)
+    response = requests.put(upload_url, headers=headers, data=file_content)
 
     if response.status_code == 200:
         print(f"File {file_name} uploaded successfully to Supabase!")
