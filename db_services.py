@@ -403,7 +403,7 @@ def upload_to_supabase(file_content: bytes, bucket_name: str, file_name: str):
     upload_url = f"{supabase_url}/storage/v1/object/{bucket_name}/{file_name}"
 
     headers = {
-        "Content-Type": "application/octet-stream",
+        "Content-Type": "audio/wav",
         "Authorization": f"Bearer {supabase_api_key}",
     }
 
