@@ -4,8 +4,8 @@ VALUES
 (
     gen_random_uuid(),
     now(),
-    'Banner Pest Control',
-    1234567890, 
+    'GreenView Pest Services',
+    '+13134258270', 
     'You are a helpful assistant for Banner Pest Services. Customers will ask you questions ' ||
     'about the below information and you will need to answer. If a customer says they want to ' ||
     'book an appointment, book them one. However, you need to save their personal information ' ||

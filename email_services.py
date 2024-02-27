@@ -1,29 +1,22 @@
+from email.mime.application import MIMEApplication
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 from dotenv import load_dotenv
+from db_services import download_file_from_supabase
 
 load_dotenv()
 
 
-def send_lead_to_sales_team(body: str, recipients: list[str]):
-    """
-    Sends a lead to the sales team from conner's work email
-
-    Args:
-        body (str): The body of the email
-        recipients (list[str]): A list of email addresses to send the lead to
-    """
-    subject = "New Lead from Rover AI"
-    sender = "conner@textrover.co"
-    send_email(
-        subject=subject, body=body, sender=sender, recipients=recipients, is_html=True
-    )
-
-
 def send_email(
-    subject: str, body: str, sender: str, recipients: list[str], is_html: bool = False
+    subject: str,
+    body: str,
+    sender: str,
+    recipients: list[str],
+    attachment_bucket: str = None,
+    attachment_file_name: str = None,
+    is_html: bool = False,
 ):
     """
     Sends an email
@@ -44,6 +37,18 @@ def send_email(
         msg.attach(MIMEText(body, "html"))
     else:
         msg.attach(MIMEText(body, "plain"))
+
+    if attachment_file_name:
+        attachment_data = download_file_from_supabase(
+            attachment_bucket, attachment_file_name
+        )
+
+        attachment = MIMEApplication(attachment_data)
+        attachment.add_header(
+            "Content-Disposition", "attachment", filename=attachment_file_name + ".wav"
+        )
+
+        msg.attach(attachment)
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp_server:
         password = os.getenv("EMAIL_PASSWORD")

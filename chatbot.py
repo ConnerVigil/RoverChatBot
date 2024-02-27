@@ -167,13 +167,16 @@ def askgpt(user_id: str, conversation_id: str, chat_log: list) -> str:
     return answer
 
 
-async def missed_call_logic(to_phone_number: str, from_phone_number: str):
+async def missed_call_logic(
+    to_phone_number: str, from_phone_number: str, call_sid: str
+):
     """
     The logic for when a missed call is received
 
     Args:
         to_phone_number (str): The phone number the call was made to
         from_phone_number (str): The phone number the call was made from
+        call_sid (str): The id of the call
     """
     company_result = get_company_by_phone_number(to_phone_number)
     company_id = None
@@ -197,7 +200,9 @@ async def missed_call_logic(to_phone_number: str, from_phone_number: str):
         sending_number=to_phone_number,
     )
     insert_message(message, "assistant", conversation_id)
-    insert_into_missed_calls(to_phone_number, from_phone_number, conversation_id)
+    insert_into_missed_calls(
+        call_sid, to_phone_number, from_phone_number, conversation_id
+    )
 
 
 def get_user_if_exists_or_create_new_user(phone_number: str, company_id: str = None):

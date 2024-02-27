@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 import json
 from db_services import *
-from email_services import send_lead_to_sales_team
+from email_services import send_email
 import pytz
 
 load_dotenv()
@@ -68,13 +68,14 @@ def pass_customer_to_representative(
     """
     formatted_time = "No phone number information"
     missed_call_time = "No missed call information"
-    phone_number = ""
-    company_name = ""
+    phone_number = "No phone number information"
+    company_name = "No company information"
     user_result = get_user_by_email(email)
 
     company_result = get_company_by_id(user_result.data[0]["company_id"])
     company = company_result.data[0]
     company_name = company["name"]
+    recording_sid = None
 
     phone_number = user_result.data[0]["phone_number"]
     missed_call_result = get_missed_call_by_phone_number(phone_number)
@@ -87,15 +88,7 @@ def pass_customer_to_representative(
             company_time_zone_obj
         )
         formatted_time = date_time_in_tz.strftime("%m/%d/%Y %I:%M %p")
-
-    # Retrieve voicemail details from Supabase
-    voicemail_result = get_voicemail_by_phone_number(phone_number)
-    if len(voicemail_result.data) == 1:
-        voicemail_filename = voicemail_result.data[0]["filename"]
-        voicemail_link = f"https://your-supabase-storage-url/{voicemail_filename}"
-        audio_player = (
-            f"<audio controls><source src='{voicemail_link}' type='audio/wav'></audio>"
-        )
+        recording_sid = missed_call_result.data[0]["recording_sid"]
 
     body = f"""
     <html>
@@ -108,8 +101,6 @@ def pass_customer_to_representative(
             <p><strong>Customer status:</strong> {customer_status}</p>
             <p><strong>Callback Times:</strong> {callback_times}</p>
             <p><strong>Summary of Interaction:</strong> {summary_of_interation}</p>
-            <p><strong>Voicemail Link:</strong> <a href='{voicemail_link}'>Listen to voicemail</a></p>
-            <p><strong>Voicemail Player:</strong> {audio_player}</p>
         </body>
     </html>
     """
@@ -117,21 +108,24 @@ def pass_customer_to_representative(
     recipients = ["talmage@textrover.co", "conner@textrover.co"]
     addresses = []
 
-<<<<<<< HEAD
     if os.getenv("SENTRY_ENVIRONMENT") == "production":
         if customer_status == "new":
             addresses = company["email_addresses_new"]
         else:
             addresses = company["email_addresses_existing"]
-=======
-    if customer_status == "new":
-        addresses = company["email_addresses_new"]
-    else:
-        addresses = company["email_addresses_existing"]
->>>>>>> main
 
     recipients.extend(addresses)
-    send_lead_to_sales_team(body, recipients)
+
+    send_email(
+        subject="New Lead From Rover AI",
+        body=body,
+        sender="conner@textrover.co",
+        recipients=recipients,
+        attachment_bucket="voicemail-recordings",
+        attachment_file_name=recording_sid,
+        is_html=True,
+    )
+
     return json.dumps({"result": "Customer passed to representative"})
 
 
