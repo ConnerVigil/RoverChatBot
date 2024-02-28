@@ -229,7 +229,9 @@ async def missedCall():
         if not check_company_hours(to_phone_number):
             return Response(status=204)
 
-        await missed_call_logic(to_phone_number, from_phone_number)
+        await missed_call_logic(
+            to_phone_number, from_phone_number, "call_sid_placeholder"
+        )
 
         return Response(status=200, headers={"Validation-Token": validation_token})
     except Exception as e:
