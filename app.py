@@ -169,7 +169,10 @@ def handle_voicemail_download():
     call_sid = request.form["CallSid"]
 
     try:
-        response = requests.get(recording_url_twilio)
+        response = requests.get(
+            recording_url_twilio,
+            auth=(os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN")),
+        )
 
         if response.status_code == 200:
             filename = f"{recording_sid}.wav"
